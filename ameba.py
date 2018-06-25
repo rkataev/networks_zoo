@@ -7,6 +7,7 @@ from keras.layers import Conv2D, MaxPooling2D, AveragePooling2D
 from keras import backend as K
 from keras import Model
 from keras.utils import np_utils
+from keras.callbacks import TensorBoard
 from sklearn.metrics import label_ranking_average_precision_score
 
 import matplotlib.pyplot as plt
@@ -96,19 +97,27 @@ def get_noise_tensor_train():
     n = len(X_train)
     return np.random.normal(size=(n, 10,))
 
+def get_noise_tensor_test():
+    n = len(X_test)
+    return np.random.normal(size=(n, 10,))
+
 def train():
     ae = get_ae()
     ae.summary()
     ae.compile(optimizer='adadelta', loss='binary_crossentropy')
     noise_input_data = get_noise_tensor_train()
-
+    noise_input_data_test = get_noise_tensor_test()
     MAP_OF_INPUT_TENSORS = {'code_input': y_train,
                             'raw_image_input': X_train,
                             'noise_input': noise_input_data}
+    MAP_OF_INPUT_TENSORS_TEST = {'code_input': y_test,
+                            'raw_image_input': X_test,
+                            'noise_input': noise_input_data_test}
     X_train_flatten = X_train.reshape(len(X_train), 784)
+    X_test_flatten = X_test.reshape(len(X_test), 784)
 
     callbacks = []
-    boardwriter = TensorBoard(log_dir='./logs_bacteria',
+    boardwriter = TensorBoard(log_dir='./logs_ameba',
                               histogram_freq=1,
                               write_graph=True,
                               write_grads=True,
@@ -117,7 +126,8 @@ def train():
 
     ae.fit(MAP_OF_INPUT_TENSORS,
               {'decoded': X_train_flatten},
-              epochs=50, batch_size=32)
+                validation_data=(MAP_OF_INPUT_TENSORS_TEST, {'decoded': X_test_flatten}),
+              epochs=50, batch_size=32, callbacks=callbacks)
 
 
 draw_corrution()

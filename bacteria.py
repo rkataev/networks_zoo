@@ -17,7 +17,7 @@ from time import time
 from keras.models import Sequential
 from keras.layers import Dense, Dropout, Flatten
 from keras.layers import Conv1D, MaxPooling1D
-from keras.callbacks import TensorBoard
+from keras.callbacks import TensorBoard, ModelCheckpoint
 from dataset_getter import open_dataset
 
 batch_size = 50
@@ -56,7 +56,9 @@ boardwriter = TensorBoard(log_dir='./logs_bacteria',
                           write_graph=True,
                           write_grads=True,
                           write_images=True)
+filepath="weights-improvement-{epoch:02d}-{val_acc:.2f}.hdf5"
+checkpoint = ModelCheckpoint(filepath, monitor='val_acc', verbose=1, save_best_only=True, mode='max')
 callbacks.append(boardwriter)
-
+callbacks.append(checkpoint)
 # само обучение
 model.fit(x=x_train, y=y_train, verbose=1,validation_data=(x_test, y_test), epochs=epochs, callbacks=callbacks)
