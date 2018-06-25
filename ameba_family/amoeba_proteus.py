@@ -24,7 +24,7 @@ class AmoebaProteus:
         code_input = Input(shape=(10,), name='code_input')
         code_embedding = Dense(20)(code_input)
 
-        noise_input = Input(shape=(10,), name='noise_input')
+        noise_input = Input(shape=(self.len_of_noise,), name='noise_input')
 
         non_corrupted_images, corrupted = corrupt.get_corrupted(self.side_corrupter)
 
