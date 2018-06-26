@@ -81,15 +81,13 @@ def load(filename_weights="amoeba_proteus.hdf5", model_json='amoeba_proteus.json
     loaded_amoeba.compile(optimizer='adadelta', loss='binary_crossentropy')
     return loaded_amoeba
 
-def get_conditioned_predictions(amoeba):
+def get_conditioned_predictions(amoeba, true_picture):
     ys= np.array(range(0,9,1))
     ys = np_utils.to_categorical(ys)
 
-
-    x = X_test[0]
     xs = []
     for i in range(9):
-        xs.append(x)
+        xs.append(true_picture)
     xs = np.array(xs)
 
     print ( ys.shape," ys shape")
@@ -100,15 +98,33 @@ def get_conditioned_predictions(amoeba):
     MAP_OF_INPUT_TENSORS = {'code_input': y_train,
                             'raw_image_input': X_train}
     predictions = amoeba.predict(MAP_OF_INPUT_TENSORS)
-    return predictions
+    reshaped_predictions = predictions.reshape(-1, 28, 28, 1)
+    return reshaped_predictions
 
-
+def overfit_prediction(prediction, true_picture, right_ansver):
+    print ("оверфитим условное предсказание к реальности")
+    # генерим модельку оверфиттера
+    input = Input(shape=(28, 28, 1), name='input_prediction')
+    x = Flatten()(input)
+    x = Dense(25, name='middle')(x)
+    corrected = Dense(784, activation='sigmoid', name='decoded')(x)
+    overfitter = Model(input, corrected)
+    overfitter.compile(optimizer='adadelta', loss='binary_crossentropy')
+    overfitter.summary()
+    true_picture = np.array([true_picture])
+    true_picture_flatten = true_picture.reshape(len(true_picture), 784)
+    history = overfitter.fit(np.array([prediction]), true_picture_flatten, epochs=1, batch_size=1)
+    losses = history.history['loss']
+    print (losses)
 
 
 if __name__ == "__main__":
     #train()
     trained_amoeba = load()
-    predictions = get_conditioned_predictions(trained_amoeba)
+    true_picture = X_test[0]
+    right_ansver = y_test[0]
+    conditioned_predictions = get_conditioned_predictions(trained_amoeba, true_picture=true_picture)
+    overfit_prediction( conditioned_predictions[0], true_picture, right_ansver)
 
 
 
