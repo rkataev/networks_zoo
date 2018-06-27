@@ -16,6 +16,7 @@ from keras.models import model_from_json
 import matplotlib.pyplot as plt
 import numpy as np
 from keras.utils import plot_model
+import pickle as pkl
 
 from ameba_family import amoeba_proteus
 
@@ -56,14 +57,10 @@ def train():
                               write_grads=True,
                               write_images=True)
     callbacks.append(boardwriter)
-    filepath = "amoeba_proteus_best.hdf5"
-    best_weights_savier = ModelCheckpoint(save_best_only=True, save_weights_only=True, filepath=filepath, monitor='val_acc', verbose=1,  mode='max')
-    callbacks.append(best_weights_savier)
-
     ae.fit(MAP_OF_INPUT_TENSORS,
               {'decoded': X_train_flatten},
                 validation_data=(MAP_OF_INPUT_TENSORS_TEST, {'decoded': X_test_flatten}),
-              epochs=1, batch_size=40, callbacks=callbacks)
+              epochs=50, batch_size=30, callbacks=callbacks)
     # охранение модели
     model_json = ae.to_json()
     with open("amoeba_proteus.json", "w") as json_file:
@@ -82,11 +79,12 @@ def load(filename_weights="amoeba_proteus.hdf5", model_json='amoeba_proteus.json
     return loaded_amoeba
 
 def get_conditioned_predictions(amoeba, true_picture):
-    ys= np.array(range(0,9,1))
+    print("генерим сетью условные предсказания")
+    ys= np.array(range(0,10,1))
     ys = np_utils.to_categorical(ys)
 
     xs = []
-    for i in range(9):
+    for i in range(0,10,1):
         xs.append(true_picture)
     xs = np.array(xs)
 
@@ -95,13 +93,13 @@ def get_conditioned_predictions(amoeba, true_picture):
 
     #теперь генерим репрезентации
 
-    MAP_OF_INPUT_TENSORS = {'code_input': y_train,
-                            'raw_image_input': X_train}
+    MAP_OF_INPUT_TENSORS = {'code_input': ys,
+                            'raw_image_input': xs}
     predictions = amoeba.predict(MAP_OF_INPUT_TENSORS)
     reshaped_predictions = predictions.reshape(-1, 28, 28, 1)
     return reshaped_predictions
 
-def overfit_prediction(prediction, true_picture, right_ansver):
+def overfit_prediction(prediction, true_picture):
     print ("оверфитим условное предсказание к реальности")
     # генерим модельку оверфиттера
     input = Input(shape=(28, 28, 1), name='input_prediction')
@@ -113,18 +111,65 @@ def overfit_prediction(prediction, true_picture, right_ansver):
     overfitter.summary()
     true_picture = np.array([true_picture])
     true_picture_flatten = true_picture.reshape(len(true_picture), 784)
-    history = overfitter.fit(np.array([prediction]), true_picture_flatten, epochs=1, batch_size=1)
+    history = overfitter.fit(np.array([prediction]), true_picture_flatten, epochs=5, batch_size=1)
     losses = history.history['loss']
-    print (losses)
+    return losses
 
+def check_different_overfits(conditioned_predictions):
+    series = []
+    for i in range(0,10,1):
+        loss_seria = overfit_prediction(conditioned_predictions[i], true_picture)
+        series.append(loss_seria)
+    return series
+
+def show_results_overfits(series_of_losses):
+    for i in range(len(series_of_losses)+1):
+        plt.plot(series_of_losses, label=str(i))
+    plt.savefig("results.png")
+    plt.clf()
+
+def show_conditioned_predictions(conditioned_predictions):
+    print("рисуем условные предсказания сети ")
+    for i, prediction in enumerate(conditioned_predictions):
+        ax = plt.subplot(1, len(conditioned_predictions), i + 1)
+        ax.set_title("by "+ str (i))
+        prediction = prediction.reshape(prediction.shape[0], prediction.shape[1])
+        ax.imshow(prediction, cmap='gray')
+
+    plt.savefig("conditioned_predictions.png")
+    plt.clf()
+
+
+def show_true_img(true_img):
+    true_img = true_img.reshape(true_img.shape[0], true_img.shape[1])
+    plt.imshow(true_img, cmap='gray')
+    plt.title("true image")
+    plt.savefig("true_image.png")
+    plt.clf()
 
 if __name__ == "__main__":
     #train()
-    trained_amoeba = load()
+
+
     true_picture = X_test[0]
     right_ansver = y_test[0]
+    #show_true_img(true_picture)
+    trained_amoeba = load()
+
     conditioned_predictions = get_conditioned_predictions(trained_amoeba, true_picture=true_picture)
-    overfit_prediction( conditioned_predictions[0], true_picture, right_ansver)
+    show_conditioned_predictions(conditioned_predictions)
+
+    series_of_losses = check_different_overfits(conditioned_predictions)
+
+    with open('series.pkl', 'wb') as f:
+        pkl.dump(series_of_losses, f)
+
+    show_results_overfits(series_of_losses)
+
+
+
+
+
 
 
 
