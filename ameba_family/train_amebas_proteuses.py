@@ -54,8 +54,8 @@ def train(name_of_experiment, epoches):
 
 
 if __name__ == "__main__":
-    names = ["little", "middle", "many_epochs"]
-    epoches = [5, 15, 30]
+    names = ["little_10"]
+    epoches = [5]
     assert len(names) == len(epoches)
     true_picture = X_test[0]
     right_ansver = y_test[0]

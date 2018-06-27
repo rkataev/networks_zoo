@@ -23,7 +23,7 @@ class AmoebaProteus:
 
     def get_ae(self):
         code_input = Input(shape=(10,), name='code_input')
-        code_embedding = Dense(20, name="code_embedding")(code_input)
+        code_embedding = Dense(10, name="code_embedding")(code_input)
 
 
 
