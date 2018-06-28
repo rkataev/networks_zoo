@@ -35,7 +35,8 @@ def get_model_overfitter():
     # генерим модельку оверфиттера
     input = Input(shape=(28, 28, 1), name='input_prediction')
     x = Flatten()(input)
-    x = Dense(10, name='middle')(x)
+    x = Dense(5, name='middle', activation='relu')(x)
+    x = Dense(5, name='yt')(x)
     corrected = Dense(784, activation='sigmoid', name='decoded')(x)
     overfitter = Model(input, corrected)
     overfitter.compile(optimizer='adadelta', loss='binary_crossentropy')
@@ -51,10 +52,10 @@ def overfit_prediction(prediction, true_picture, epoches):
     losses = history.history['loss']
     return losses
 
-def check_different_overfits(conditioned_predictions, true_picture):
+def check_different_overfits(conditioned_predictions, true_picture, epoches):
     series = []
-    for i in range(0,10,1):
-        loss_seria = overfit_prediction(conditioned_predictions[i], true_picture)
+    for i in range(len(conditioned_predictions)):
+        loss_seria = overfit_prediction(conditioned_predictions[i], true_picture, epoches=epoches)
         series.append(loss_seria)
     return series
 
@@ -74,9 +75,9 @@ def select_predictions_for_overfit():
     return predictions
 
 if __name__ == "__main__":
-    true_picture = get_true_pic(pic_id=0)
+    true_picture = get_true_pic(pic_id=4)
     predictions = select_predictions_for_overfit()
-    series = check_different_overfits(predictions, true_picture)
-    with open('series_new.pkl', 'wb') as f:
+    series = check_different_overfits(predictions, true_picture, epoches=136)
+    with open('series_10bn.pkl', 'wb') as f:
         pkl.dump(series, f)
-    show_losses_paths('series_new.pkl')
+    show_losses_paths('series_10bn.pkl')

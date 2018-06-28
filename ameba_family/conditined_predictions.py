@@ -100,6 +100,16 @@ def show_predictions(reshaped_predictions , name, ax_names):
     plt.savefig(name + "_predictions.png")
     plt.clf()
 
+def add_noise(reshaped_predictions, factor):
+    noised = []
+    for prediction in reshaped_predictions:
+        noise = np.random.random(prediction.shape) * factor
+        prediction = np.add(prediction, noise)
+        np.clip(prediction, a_min=0., a_max=1.)
+        noised.append(prediction)
+    return np.array(noised)
+
+
 if __name__ == "__main__":
     # загружаем базовую амебу
     filename_weights = easygui.fileopenbox("выберите hdf5 файд с весами базовой модели")
@@ -107,12 +117,12 @@ if __name__ == "__main__":
     amoeba = load(filename_weights, model_json)
 
     #загружаем картинку и правильный ответ
-    pic, ans =  get_pic_and_ansver(1)
+    pic, ans =  get_pic_and_ansver(4)
 
     #загружаем условие(я)
-    #conditions, names_of_conditions = get_conditions([1,5,7])#get_conditions()
+    conditions, names_of_conditions = get_conditions([0,1,2,3,4,7])#get_conditions()
     #conditions, names_of_conditions = get_mixed_cond()
-    conditions, names_of_conditions =  get_custom_cond()
+    #conditions, names_of_conditions =  get_custom_cond()
 
     print (conditions)
     print(names_of_conditions)
@@ -120,4 +130,8 @@ if __name__ == "__main__":
     #генерим условную реконструкцию(и)  , сохраняем картинкой
     name_visualisation = "right_ans-"+str(ans)
     reshaped_predictions = make_cond_predictios(amoeba, pic, conditions=conditions)
-    show_predictions(reshaped_predictions, name_visualisation, names_of_conditions)
+    #show_predictions(reshaped_predictions, name_visualisation, names_of_conditions)
+    with open('predictions10bn.pkl', 'wb') as f:
+        pkl.dump(reshaped_predictions, f)
+    new_preds= add_noise(reshaped_predictions, 2)
+    show_predictions(new_preds, name_visualisation+"_noise", names_of_conditions)

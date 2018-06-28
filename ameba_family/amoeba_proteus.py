@@ -4,7 +4,7 @@ import keras
 from keras.datasets import mnist
 from keras.models import Sequential
 from keras.layers import Dense, Dropout, Flatten, Input, Concatenate
-from keras.layers import Conv2D, MaxPooling2D, AveragePooling2D
+from keras.layers import Conv2D, MaxPooling2D, AveragePooling2D, BatchNormalization
 from keras import backend as K
 from keras import Model
 from keras.utils import np_utils
@@ -29,13 +29,12 @@ class AmoebaProteus:
 
         non_corrupted_images, corrupted = corrupt.get_corrupted(self.side_corrupter)
 
-        corrupted_input_embedding = Dense(20, name="corrupted_input_embedding")(corrupted)
-        corrupted_input_embedding = Flatten(name = "faltten_embedding")(corrupted_input_embedding)
+        #corrupted_input_embedding = Dense(15, name="corrupted_input_embedding")(corrupted)
+        corrupted_input_embedding = Flatten(name = "faltten_embedding")(corrupted)
 
         x = keras.layers.concatenate([corrupted_input_embedding, code_embedding])
-
         decoded = Dense(100, activation='relu')(x)
-        decoded = Dropout(rate=0.25)(decoded)
+        decoded = BatchNormalization()(decoded)
         decoded = Dense(784, activation='sigmoid', name='decoded')(decoded)
         ae_model = Model(inputs=[non_corrupted_images, code_input], outputs=decoded)
         return ae_model
