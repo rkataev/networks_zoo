@@ -107,7 +107,7 @@ if __name__ == "__main__":
     amoeba = load(filename_weights, model_json)
 
     #загружаем картинку и правильный ответ
-    pic, ans =  get_pic_and_ansver(0)
+    pic, ans =  get_pic_and_ansver(1)
 
     #загружаем условие(я)
     #conditions, names_of_conditions = get_conditions([1,5,7])#get_conditions()

@@ -1,5 +1,20 @@
+# -*- coding: utf-8 -*
+
 import matplotlib.pyplot as plt
 import easygui
+import keras
+from keras.datasets import mnist
+from keras.models import Sequential
+from keras.layers import Dense, Dropout, Flatten, Input, Add
+from keras.layers import Conv2D, MaxPooling2D, AveragePooling2D
+from keras import backend as K
+from keras import Model
+
+import matplotlib.pyplot as plt
+import numpy as np
+from keras.utils import plot_model
+import pickle as pkl
+
 
 def show_losses_paths(losses_pkl):
     # plt.xkcd()
@@ -20,7 +35,7 @@ def get_model_overfitter():
     # генерим модельку оверфиттера
     input = Input(shape=(28, 28, 1), name='input_prediction')
     x = Flatten()(input)
-    x = Dense(20, name='middle')(x)
+    x = Dense(10, name='middle')(x)
     corrected = Dense(784, activation='sigmoid', name='decoded')(x)
     overfitter = Model(input, corrected)
     overfitter.compile(optimizer='adadelta', loss='binary_crossentropy')
@@ -53,9 +68,15 @@ def get_true_pic(pic_id):
 
 def select_predictions_for_overfit():
     pkl_predictions_file = easygui.fileopenbox("ыберите файл с прегенерированными предсказаниями")
-
+    infile = open(pkl_predictions_file, 'rb')
+    predictions = pkl.load(infile)
+    infile.close()
+    return predictions
 
 if __name__ == "__main__":
     true_picture = get_true_pic(pic_id=0)
     predictions = select_predictions_for_overfit()
-    check_different_overfits(predictions, true_picture)
+    series = check_different_overfits(predictions, true_picture)
+    with open('series_new.pkl', 'wb') as f:
+        pkl.dump(series, f)
+    show_losses_paths('series_new.pkl')
