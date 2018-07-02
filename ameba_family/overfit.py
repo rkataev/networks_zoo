@@ -35,8 +35,7 @@ def get_model_overfitter():
     # генерим модельку оверфиттера
     input = Input(shape=(28, 28, 1), name='input_prediction')
     x = Flatten()(input)
-    x = Dense(5, name='middle', activation='relu')(x)
-    x = Dense(5, name='yt')(x)
+    x = Dense(3, name='middle', activation='relu')(x)
     corrected = Dense(784, activation='sigmoid', name='decoded')(x)
     overfitter = Model(input, corrected)
     overfitter.compile(optimizer='adadelta', loss='binary_crossentropy')
@@ -75,7 +74,7 @@ def select_predictions_for_overfit():
     return predictions
 
 if __name__ == "__main__":
-    true_picture = get_true_pic(pic_id=4)
+    true_picture = get_true_pic(pic_id=1)
     predictions = select_predictions_for_overfit()
     series = check_different_overfits(predictions, true_picture, epoches=136)
     with open('series_10bn.pkl', 'wb') as f:
