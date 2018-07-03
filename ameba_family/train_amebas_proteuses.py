@@ -24,7 +24,7 @@ y_test = np_utils.to_categorical(y_test)
 
 
 def train(name_of_experiment, epoches):
-    amoeba = amoeba_proteus.AmoebaProteus(side_corrupter=4)
+    amoeba = amoeba_proteus.AmoebaProteus(side_corrupter=7)
     ae = amoeba.get_ae()
     ae.summary()
     ae.compile(optimizer='adadelta', loss='binary_crossentropy')
@@ -54,8 +54,8 @@ def train(name_of_experiment, epoches):
 
 
 if __name__ == "__main__":
-    names = ["little_10bn"]
-    epoches = [6]
+    names = ["side5"]
+    epoches = [7]
     assert len(names) == len(epoches)
 
     for i in range(len(epoches)):

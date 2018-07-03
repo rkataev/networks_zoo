@@ -117,10 +117,10 @@ if __name__ == "__main__":
     amoeba = load(filename_weights, model_json)
 
     #загружаем картинку и правильный ответ
-    pic, ans =  get_pic_and_ansver(4)
+    pic, ans =  get_pic_and_ansver(0)
 
     #загружаем условие(я)
-    conditions, names_of_conditions = get_conditions([0,1,2,3,4,7])#get_conditions()
+    conditions, names_of_conditions = get_conditions([0,1,2,3,4,7,8,9])#get_conditions()
     #conditions, names_of_conditions = get_mixed_cond()
     #conditions, names_of_conditions =  get_custom_cond()
 
@@ -133,5 +133,5 @@ if __name__ == "__main__":
     #show_predictions(reshaped_predictions, name_visualisation, names_of_conditions)
     with open('predictions10bn.pkl', 'wb') as f:
         pkl.dump(reshaped_predictions, f)
-    new_preds= add_noise(reshaped_predictions, 2)
+    new_preds= add_noise(reshaped_predictions, 1.5)
     show_predictions(new_preds, name_visualisation+"_noise", names_of_conditions)
