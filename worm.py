@@ -42,7 +42,7 @@ def set_worm_hyperparams():
     global worm_loss
     global ecg_len
 
-    epoches = 12
+    epoches = 15
     batch_size = 40
     worm_name = "_worm_spiridon1"
     worm_optimizer = 'adadelta'
