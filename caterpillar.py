@@ -1,4 +1,5 @@
-#
+# -*- coding: utf-8 -*
+# гусеница
 import numpy as np
 from keras.layers import (
     Input,
@@ -108,8 +109,9 @@ def train():
     x_train, x_test = prepare_data()
     history = model.fit(x=x_train, y=x_train,
                        validation_data=(x_test, x_test),
-                       epochs=1000)
-    save_history(history, "ardold_shvartsneger_1000")
+                        batch_size=10,
+                       epochs=10000)
+    save_history(history, "ardold_shvartsneger_10000")
 
 
 train()
