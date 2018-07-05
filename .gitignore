@@ -1,4 +1,6 @@
 .vscode/
 *.pyc
 logs_worm_spiridon1/
+logs_worm_spiridon2/
+*.png
 *.hdf5
