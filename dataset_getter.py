@@ -34,6 +34,8 @@ def open_dataset():
 
     return  x_train, x_test, y_train, y_test
 
+
+
 if __name__ == "__main__":
     #x_train, x_test, y_train, y_test = open_dataset()
     import matplotlib.pyplot as plt

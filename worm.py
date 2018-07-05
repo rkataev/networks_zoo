@@ -42,9 +42,9 @@ def set_worm_hyperparams():
     global worm_loss
     global ecg_len
 
-    epoches = 12
+    epoches = 50
     batch_size = 40
-    worm_name = "_worm_spiridon1"
+    worm_name = "_worm_spiridon2"
     worm_optimizer = 'adadelta'
     worm_loss = 'binary_crossentropy'
     ecg_len = 500
@@ -72,10 +72,8 @@ def block1(x, block_name):
     branch_0 = conv_bn(x, 32, 1, name="end_branch_0_" + block_name)
     branch_1 = conv_bn(x, 32, 1)
     branch_1 = conv_bn(branch_1, 32, 3, name="end_branch_1_" + block_name)
-    branch_2 = conv_bn(x, 32, 1)
-    branch_2 = conv_bn(branch_2, 48, 3)
-    branch_2 = conv_bn(branch_2, 64, 3 , name="end_branch_2_" + block_name)
-    x = Concatenate(name = block_name)([branch_0, branch_1, branch_2])
+
+    x = Concatenate(name = block_name)([branch_0, branch_1])
     return x
 
 
@@ -93,7 +91,6 @@ def make_worm():
 
     # блоки типа 1
     x = block1(x, "FIRST_BLOCK")
-    x = block1(x, "SECOND_BLOCK")
 
     # редукция 2
 
@@ -135,7 +132,17 @@ def prepare_data():
     return x_train, x_test, y_train, y_test
 
 
+def save_result(history):
+    plt.plot(history.history['loss'])
+    plt.plot(history.history['val_loss'])
+    plt.title('model loss')
+    plt.ylabel('loss')
+    plt.xlabel('epoch')
+    plt.legend(['train', 'test'], loc='upper left')
+    plt.savefig(worm_name+".png")
+
 if __name__ == "__main__":
+    K.clear_session()
     set_worm_hyperparams()
     x_train, x_test, y_train, y_test = prepare_data()
     worm = make_worm()
@@ -143,15 +150,10 @@ if __name__ == "__main__":
                        loss=worm_loss)
 
     history = worm.fit(x=x_train, y=y_train,
-                   verbose=1,
                    validation_data=(x_test, y_test),
-                   epochs=epoches,
-                   callbacks=get_callbacks_for_worm())
+                   epochs=epoches, callbacks=get_callbacks_for_worm())
     worm.save_weights("weights_"+worm_name+".hdf5")
-    losses = history.history['loss']
-    x = [i for i in range(len(losses))]
-    plt.plot(x, losses)
-    plt.show()
+    save_result(history)
 
 
 
