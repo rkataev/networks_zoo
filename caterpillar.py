@@ -4,9 +4,13 @@ import numpy as np
 from keras.layers import (
     Input,
     BatchNormalization,
-    Activation, Dense, Dropout, Merge,
+    Activation, Dense, Dropout,
     Conv2D, MaxPooling2D, ZeroPadding2D, UpSampling2D
 )
+
+from keras.layers import merge
+from keras.preprocessing.sequence import TimeseriesGenerator
+
 from keras.models import Model
 from keras.losses import (
     mean_squared_error
@@ -34,6 +38,22 @@ def prepare_data():
     print("после свопа - " + str(x_test.shape))
 
     return x_train, x_test
+
+def generate():
+    x_train, x_test, _, _ = open_dataset()
+
+    x_train = np.swapaxes(x_train, 0, 3)
+    x_test = np.swapaxes(x_test, 0, 3)
+
+    x_train = x_train[:, :, 0, 0]
+    x_test = x_test[:, :, 0, 0]
+
+    data_gen = TimeseriesGenerator(x_test, x_train, length=ecg_segment_len, sampling_rate=1, stride=ecg_segment_len, shuffle=False, reverse=False, batch_size=10)
+
+    print(str(x_train.shape))
+    print(str(x_test.shape))
+
+    return data_gen
 
 def save_history(history, canterpillar_name):
     plt.plot(history.history['loss'])
@@ -106,11 +126,13 @@ def train():
     model.compile(optimizer=optimiser,
                  loss=mean_squared_error)
 
-    x_train, x_test = prepare_data()
-    history = model.fit(x=x_train, y=x_train,
-                       validation_data=(x_test, x_test),
-                        batch_size=10,
-                       epochs=10000)
+    # x_train, x_test = prepare_data()
+    # history = model.fit(x=x_train, y=x_train,
+    #                    validation_data=(x_test, x_test),
+    #                     batch_size=10,
+    #                    epochs=10000)
+    #generate()
+    history = model.fit_generator(generate())
     save_history(history, "ardold_shvartsneger_10000")
 
 
