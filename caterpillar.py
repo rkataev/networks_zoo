@@ -6,9 +6,13 @@ from keras.models import load_model
 from keras.layers import (
     Input,
     BatchNormalization,
-    Activation, Dense, Dropout, Merge,
+    Activation, Dense, Dropout,
     Conv2D, MaxPooling2D, ZeroPadding2D, UpSampling2D
 )
+
+from keras.layers import merge
+from keras.preprocessing.sequence import TimeseriesGenerator
+
 from keras.models import Model
 from keras.losses import (
     mean_squared_error
@@ -20,6 +24,7 @@ from keras.optimizers import (
 import matplotlib.pyplot as plt
 from keras import backend as K
 import tensorflow as tf
+
 from dataset_getter import prepare_data
 from utils import (
     draw_reconstruction_to_png
@@ -75,7 +80,6 @@ def encoder(num_kernels_arr=[25, 30], kernels_sizes_arr=(5, 3), strides_arr=[1,1
         return x
     return f
 
-
 def decoder(num_kernels_arr=[30, 25, n_channles], kernels_sizes_arr=[3, 5, 1], upsemblings_arr=[1,2,2]):
     def f(input):
         x = input
@@ -102,6 +106,7 @@ def train_canterpillar(name):
 
     model.compile(optimizer=optimiser,
                  loss=mean_squared_error)
+
 
     x_train, x_test = prepare_data_for_canterpillar()
     history = model.fit(x=x_train, y=x_train,
