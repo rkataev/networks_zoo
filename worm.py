@@ -25,7 +25,7 @@ from keras.layers import (
 )
 
 
-from dataset_getter import open_dataset
+from dataset_getter import open_dataset_as_train_test
 
 epoches = None
 batch_size = None
@@ -121,7 +121,7 @@ def get_callbacks_for_worm():
 
 def prepare_data():
     # готовим данные
-    x_train, x_test, y_train, y_test = open_dataset()
+    x_train, x_test, y_train, y_test = open_dataset_as_train_test()
 
     x_train = np.swapaxes(x_train, 1, 3)
     x_test = np.swapaxes(x_test, 1, 3)
