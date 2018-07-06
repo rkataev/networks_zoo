@@ -23,6 +23,7 @@ import matplotlib.pyplot as plt
 from keras import backend as K
 import tensorflow as tf
 from dataset_getter import open_dataset
+from caterpillar_feeder import our_train_generator, our_val_generator
 
 ecg_segment_len = 252
 n_channles = 12
@@ -38,22 +39,6 @@ def prepare_data():
     print("после свопа - " + str(x_test.shape))
 
     return x_train, x_test
-
-def generate():
-    x_train, x_test, _, _ = open_dataset()
-
-    x_train = np.swapaxes(x_train, 0, 3)
-    x_test = np.swapaxes(x_test, 0, 3)
-
-    x_train = x_train[:, :, 0, 0]
-    x_test = x_test[:, :, 0, 0]
-
-    data_gen = TimeseriesGenerator(x_test, x_train, length=ecg_segment_len, sampling_rate=1, stride=ecg_segment_len, shuffle=False, reverse=False, batch_size=10)
-
-    print(str(x_train.shape))
-    print(str(x_test.shape))
-
-    return data_gen
 
 def save_history(history, canterpillar_name):
     plt.plot(history.history['loss'])
@@ -98,7 +83,6 @@ def encoder(num_kernels_arr=[25, 30], kernels_sizes_arr=(5, 3), strides_arr=[1,1
         return x
     return f
 
-
 def decoder(num_kernels_arr=[30, 25, n_channles], kernels_sizes_arr=[3, 5, 1], upsemblings_arr=[1,2,2]):
     def f(input):
         x = input
@@ -126,13 +110,13 @@ def train():
     model.compile(optimizer=optimiser,
                  loss=mean_squared_error)
 
-    # x_train, x_test = prepare_data()
+    #x_train, x_test = prepare_data()
     # history = model.fit(x=x_train, y=x_train,
     #                    validation_data=(x_test, x_test),
     #                     batch_size=10,
     #                    epochs=10000)
-    #generate()
-    history = model.fit_generator(generate())
+
+    history = model.fit_generator(generator = our_train_generator(ecg_segment_len, batch_size=10), steps_per_epoch = 274/10, epochs = 1000, verbose = 2, validation_data = our_val_generator(ecg_segment_len, batch_size=10), validation_steps = 135/10)
     save_history(history, "ardold_shvartsneger_10000")
 
 
