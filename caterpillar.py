@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*
 # гусеница
 import numpy as np
+import easygui
+from keras.models import load_model
 from keras.layers import (
     Input,
     BatchNormalization,
@@ -18,21 +20,16 @@ from keras.optimizers import (
 import matplotlib.pyplot as plt
 from keras import backend as K
 import tensorflow as tf
-from dataset_getter import open_dataset
+from dataset_getter import prepare_data
+from utils import (
+    draw_reconstruction_to_png
+)
 
 ecg_segment_len = 252
 n_channles = 12
 
-def prepare_data():
-    # готовим данные
-    x_train, x_test, _, _ = open_dataset()
-
-    x_train = np.swapaxes(x_train, 1, 3)
-    x_test = np.swapaxes(x_test, 1, 3)
-    x_train = x_train[:, 0:ecg_segment_len, :, : ]
-    x_test = x_test[:, 0:ecg_segment_len, :, :]
-    print("после свопа - " + str(x_test.shape))
-
+def prepare_data_for_canterpillar():
+    x_train, x_test, _, _ = prepare_data(ecg_segment_len)
     return x_train, x_test
 
 def save_history(history, canterpillar_name):
@@ -98,7 +95,7 @@ def canterpillar_net():
     model = Model(input, decoder()(code))
     return model
 
-def train():
+def train_canterpillar(name):
     model = canterpillar_net()
     model.summary()
     optimiser = sgd(momentum=0.9, nesterov=True)
@@ -106,15 +103,38 @@ def train():
     model.compile(optimizer=optimiser,
                  loss=mean_squared_error)
 
-    x_train, x_test = prepare_data()
+    x_train, x_test = prepare_data_for_canterpillar()
     history = model.fit(x=x_train, y=x_train,
                        validation_data=(x_test, x_test),
-                        batch_size=10,
-                       epochs=10000)
-    save_history(history, "ardold_shvartsneger_10000")
+                        batch_size=20,
+                       epochs=100)
+
+    save_history(history, name)
+    model.save(name+'.h5')
+    return model
+
+def show_reconstruction_by_ae(ecg_sample, name):
+    filepath = easygui.fileopenbox("выберите файл с обученной моделью .h5")
+    trained_model = load_model(filepath)
+
+    ecg_sample = np.array([ecg_sample])
+    prediction = trained_model.predict(ecg_sample)
+
+    draw_reconstruction_to_png(ecg_sample[0],prediction[0], name)
+
+def get_ecg_test_sample(num_patient):
+    _, x_test = prepare_data_for_canterpillar()
+    sample = x_test[num_patient,:,:,:]
+    print("форма тензора с экг: "+ str(sample.shape))
+    return sample
 
 
-train()
+name = "merkel"
+#model = train_canterpillar(name)
+ecg_sample = get_ecg_test_sample(num_patient=0)
+show_reconstruction_by_ae(ecg_sample, name)
+
+
 
 
 

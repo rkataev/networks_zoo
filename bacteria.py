@@ -18,7 +18,7 @@ from keras.models import Sequential
 from keras.layers import Dense, Dropout, Flatten
 from keras.layers import Conv1D, MaxPooling1D
 from keras.callbacks import TensorBoard, ModelCheckpoint
-from dataset_getter import open_dataset
+from dataset_getter import open_dataset_as_train_test
 
 batch_size = 50
 num_classes = 5
@@ -28,7 +28,7 @@ epochs = 10
 img_len = 5000
 
 # олучаем данные, сразу трейн и тест
-x_train, x_test, y_train, y_test = open_dataset()
+x_train, x_test, y_train, y_test = open_dataset_as_train_test()
 
 
 # простейшая сверточная моделька
