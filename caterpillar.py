@@ -7,7 +7,7 @@ from keras.layers import (
     Input,
     BatchNormalization,
     Activation, Dense, Dropout, Merge,
-    Conv2D, MaxPooling2D, ZeroPadding2D, UpSampling2D
+    Conv2D, MaxPooling2D, ZeroPadding2D, UpSampling2D, AvgPool2D
 )
 from keras.models import Model
 from keras.losses import (
@@ -41,24 +41,24 @@ def save_history(history, canterpillar_name):
     plt.legend(['train', 'test'], loc='upper left')
     plt.savefig(canterpillar_name+".png")
 
-def conv_block(num_kernels, kernel_size, stride):
+def conv_block(num_kernels, kernel_size, stride, activation="linear"):
     def f(prev):
         conv = prev
         conv = Conv2D(filters=num_kernels, kernel_size=(kernel_size,1), padding='same', strides=(stride,1))(conv)
         conv = BatchNormalization()(conv)
-        conv = Activation('relu')(conv)
+        conv = Activation(activation)(conv)
         conv = MaxPooling2D(pool_size=(2,1))(conv)
         return conv
 
     return f
 
-def deconv_block(num_kernels, kernel_size, upsampling):
+def deconv_block(num_kernels, kernel_size, upsampling, activation="linear"):
     def f(prev):
         deconv = prev
         deconv = UpSampling2D(size=(upsampling, 1))(deconv)
         deconv = Conv2D(filters=num_kernels, kernel_size=(kernel_size,1), padding='same')(deconv)
         deconv = BatchNormalization()(deconv)
-        deconv = Activation('relu')(deconv)
+        deconv = Activation(activation)(deconv)
 
         return deconv
 
@@ -107,7 +107,7 @@ def train_canterpillar(name):
     history = model.fit(x=x_train, y=x_train,
                        validation_data=(x_test, x_test),
                         batch_size=20,
-                       epochs=100)
+                       epochs=90)
 
     save_history(history, name)
     model.save(name+'.h5')
@@ -129,9 +129,9 @@ def get_ecg_test_sample(num_patient):
     return sample
 
 
-name = "merkel"
+name = "olland"
 #model = train_canterpillar(name)
-ecg_sample = get_ecg_test_sample(num_patient=0)
+ecg_sample = get_ecg_test_sample(num_patient=2)
 show_reconstruction_by_ae(ecg_sample, name)
 
 
