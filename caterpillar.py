@@ -6,9 +6,13 @@ from keras.models import load_model
 from keras.layers import (
     Input,
     BatchNormalization,
-    Activation, Dense, Dropout, Merge,
-    Conv2D, MaxPooling2D, ZeroPadding2D, UpSampling2D, AvgPool2D
+    Activation, Dense, Dropout,
+    Conv2D, MaxPooling2D, ZeroPadding2D, UpSampling2D
 )
+
+from keras.layers import merge
+from keras.preprocessing.sequence import TimeseriesGenerator
+
 from keras.models import Model
 from keras.losses import (
     mean_squared_error
@@ -20,6 +24,7 @@ from keras.optimizers import (
 import matplotlib.pyplot as plt
 from keras import backend as K
 import tensorflow as tf
+
 from dataset_getter import prepare_data
 from utils import (
     draw_reconstruction_to_png
@@ -41,24 +46,24 @@ def save_history(history, canterpillar_name):
     plt.legend(['train', 'test'], loc='upper left')
     plt.savefig(canterpillar_name+".png")
 
-def conv_block(num_kernels, kernel_size, stride, activation="linear"):
+def conv_block(num_kernels, kernel_size, stride):
     def f(prev):
         conv = prev
         conv = Conv2D(filters=num_kernels, kernel_size=(kernel_size,1), padding='same', strides=(stride,1))(conv)
         conv = BatchNormalization()(conv)
-        conv = Activation(activation)(conv)
+        conv = Activation('relu')(conv)
         conv = MaxPooling2D(pool_size=(2,1))(conv)
         return conv
 
     return f
 
-def deconv_block(num_kernels, kernel_size, upsampling, activation="linear"):
+def deconv_block(num_kernels, kernel_size, upsampling):
     def f(prev):
         deconv = prev
         deconv = UpSampling2D(size=(upsampling, 1))(deconv)
         deconv = Conv2D(filters=num_kernels, kernel_size=(kernel_size,1), padding='same')(deconv)
         deconv = BatchNormalization()(deconv)
-        deconv = Activation(activation)(deconv)
+        deconv = Activation('relu')(deconv)
 
         return deconv
 
@@ -74,7 +79,6 @@ def encoder(num_kernels_arr=[25, 30], kernels_sizes_arr=(5, 3), strides_arr=[1,1
             x = conv_block(num_kernels, kernel_size, stride)(x)
         return x
     return f
-
 
 def decoder(num_kernels_arr=[30, 25, n_channles], kernels_sizes_arr=[3, 5, 1], upsemblings_arr=[1,2,2]):
     def f(input):
@@ -103,11 +107,12 @@ def train_canterpillar(name):
     model.compile(optimizer=optimiser,
                  loss=mean_squared_error)
 
+
     x_train, x_test = prepare_data_for_canterpillar()
     history = model.fit(x=x_train, y=x_train,
                        validation_data=(x_test, x_test),
                         batch_size=20,
-                       epochs=90)
+                       epochs=100)
 
     save_history(history, name)
     model.save(name+'.h5')
@@ -129,9 +134,9 @@ def get_ecg_test_sample(num_patient):
     return sample
 
 
-name = "olland"
+name = "merkel"
 #model = train_canterpillar(name)
-ecg_sample = get_ecg_test_sample(num_patient=2)
+ecg_sample = get_ecg_test_sample(num_patient=0)
 show_reconstruction_by_ae(ecg_sample, name)
 
 
