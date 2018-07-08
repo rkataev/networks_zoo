@@ -71,7 +71,7 @@ def deconv_block(num_kernels, kernel_size, upsampling):
 
     return f
 
-def encoder(num_kernels_arr=[25, 30], kernels_sizes_arr=(5, 3), strides_arr=[1,1]):
+def encoder(num_kernels_arr=[10, 15], kernels_sizes_arr=(5, 3), strides_arr=[1,1]):
     def f(input):
         x = input
         for i in range(len(num_kernels_arr)):
@@ -82,7 +82,7 @@ def encoder(num_kernels_arr=[25, 30], kernels_sizes_arr=(5, 3), strides_arr=[1,1
         return x
     return f
 
-def decoder(num_kernels_arr=[30, 25, n_channles], kernels_sizes_arr=[3, 5, 1], upsemblings_arr=[1,2,2]):
+def decoder(num_kernels_arr=[15, 10, n_channles], kernels_sizes_arr=[3, 5, 1], upsemblings_arr=[1,2,2]):
     def f(input):
         x = input
         for i in range(len(num_kernels_arr)):
@@ -130,8 +130,8 @@ def train_canterpillar_with_generator(name):
 
 
     x_train, x_test = prepare_data_for_canterpillar(segment_len=None)
-    batch_size = 10
-    steps_per_epoch = 30
+    batch_size = 20
+    steps_per_epoch = 15
     print("батчей за эпоху будет:" + str(steps_per_epoch))
     print("в одном батче " + str(batch_size) + " кардиограмм.")
     train_generator = ecg_batches_generator(segment_len=ecg_segment_len,
@@ -167,11 +167,11 @@ def get_ecg_test_sample(num_patient):
     return sample
 
 
-name = "mishel_obama"
+name = "orochimaru_nogen_"
 #model = train_canterpillar(name)
-#model = train_canterpillar_with_generator(name)
-ecg_sample = get_ecg_test_sample(num_patient=0)
-show_reconstruction_by_ae(ecg_sample, name)
+model = train_canterpillar_with_generator(name)
+#ecg_sample = get_ecg_test_sample(num_patient=0)
+#show_reconstruction_by_ae(ecg_sample, name)
 
 
 
