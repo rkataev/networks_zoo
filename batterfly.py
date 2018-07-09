@@ -7,7 +7,7 @@ from keras.models import load_model
 from keras.layers import (
     Input,
     BatchNormalization,
-    Activation, Dense, Dropout,
+    Activation, Dense, Dropout,Flatten,
     Conv2D, MaxPooling2D, ZeroPadding2D, UpSampling2D
 )
 
@@ -39,8 +39,9 @@ def _get_trained_canterpillar():
 
 def get_classifier( hidden_len=15):
     def f(input):
-        x = Dense(units=hidden_len, activation='relu')(input)
-        x = Dense(units=1,activation='sigmoid')(x)
+        x = Flatten()(input)
+        x = Dense(units=hidden_len, activation='relu')(x)
+        x = Dense(units=1,activation='sigmoid', name="classifier")(x)
         return x
     return f
 
@@ -67,8 +68,8 @@ def train_batterfly(name):
     model = create_batterfly()
     model.summary()
     x_train, x_test, y_train, y_test = prepare_data(seg_len=ecg_segment_len)
-    history = model.fit(x=x_train, y=y_train,
-                        validation_data=(x_test, y_test),
+    history = model.fit(x=x_train, y={"classifier": y_train},
+                        validation_data=(x_test, {"classifier":y_test}),
                         batch_size=20,
                         epochs=50)
 
@@ -76,7 +77,7 @@ def train_batterfly(name):
     model.save(name + '.h5')
     return model
 
-K.clear_session()
+
 batterfly_name = "batterfly_left_atrum"
 train_batterfly(batterfly_name)
 
