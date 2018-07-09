@@ -41,3 +41,11 @@ def reshape_ecg_tensor(ecg):
     print ("форма тезора с экг (после напильника) =" + str(ecg))
     return ecg
 
+def save_history(history, canterpillar_name):
+    plt.plot(history.history['loss'])
+    plt.plot(history.history['val_loss'])
+    plt.title('model loss')
+    plt.ylabel('loss')
+    plt.xlabel('epoch')
+    plt.legend(['train', 'test'], loc='upper left')
+    plt.savefig(canterpillar_name+".png")

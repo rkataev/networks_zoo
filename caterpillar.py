@@ -12,7 +12,7 @@ from keras.layers import (
 )
 
 from keras.layers import merge
-from keras.preprocessing.sequence import TimeseriesGenerator
+
 
 from keras.models import Model
 from keras.losses import (
@@ -29,7 +29,7 @@ import tensorflow as tf
 from caterpillar_feeder import ecg_batches_generator
 from dataset_getter import prepare_data
 from utils import (
-    draw_reconstruction_to_png
+    draw_reconstruction_to_png, save_history
 )
 
 ecg_segment_len = 252
@@ -39,14 +39,6 @@ def prepare_data_for_canterpillar(segment_len=None):
     x_train, x_test, _, _ = prepare_data(segment_len)
     return x_train, x_test
 
-def save_history(history, canterpillar_name):
-    plt.plot(history.history['loss'])
-    plt.plot(history.history['val_loss'])
-    plt.title('model loss')
-    plt.ylabel('loss')
-    plt.xlabel('epoch')
-    plt.legend(['train', 'test'], loc='upper left')
-    plt.savefig(canterpillar_name+".png")
 
 def conv_block(num_kernels, kernel_size, stride):
     def f(prev):
@@ -59,14 +51,16 @@ def conv_block(num_kernels, kernel_size, stride):
 
     return f
 
-def deconv_block(num_kernels, kernel_size, upsampling):
+def deconv_block(num_kernels, kernel_size, upsampling, name):
     def f(prev):
         deconv = prev
         deconv = UpSampling2D(size=(upsampling, 1))(deconv)
         deconv = Conv2D(filters=num_kernels, kernel_size=(kernel_size,1), padding='same')(deconv)
         deconv = BatchNormalization()(deconv)
-        deconv = Activation('linear')(deconv)
-
+        if name is not None:
+            deconv = Activation('linear', name=name)(deconv)
+        else:
+            deconv = Activation('linear')(deconv)
         return deconv
 
     return f
@@ -82,14 +76,15 @@ def encoder(num_kernels_arr=[10, 15], kernels_sizes_arr=(5, 3), strides_arr=[1,1
         return x
     return f
 
-def decoder(num_kernels_arr=[15, 10, n_channles], kernels_sizes_arr=[3, 5, 1], upsemblings_arr=[1,2,2]):
+def decoder(num_kernels_arr=[15, 10, n_channles], kernels_sizes_arr=[3, 5, 1], upsemblings_arr=[1,2,2], names = ['bottleneck',None, None]):
     def f(input):
         x = input
         for i in range(len(num_kernels_arr)):
             num_kernels = num_kernels_arr[i]
             kernel_size = kernels_sizes_arr[i]
             upsampling = upsemblings_arr[i]
-            x = deconv_block(num_kernels, kernel_size, upsampling)(x)
+            name = names[i]
+            x = deconv_block(num_kernels, kernel_size, upsampling, name)(x)
 
         return x
     return f
@@ -167,7 +162,7 @@ def get_ecg_test_sample(num_patient):
     return sample
 
 
-name = "orochimaru_nogen_"
+name = "zinger"
 #model = train_canterpillar(name)
 model = train_canterpillar_with_generator(name)
 #ecg_sample = get_ecg_test_sample(num_patient=0)
