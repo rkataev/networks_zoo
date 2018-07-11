@@ -65,7 +65,7 @@ def deconv_block(num_kernels, kernel_size, upsampling, name):
 
     return f
 
-def encoder(num_kernels_arr=[10, 15], kernels_sizes_arr=(5, 3), strides_arr=[1,1]):
+def encoder(num_kernels_arr=[10, 13], kernels_sizes_arr=(5, 3), strides_arr=[1,1]):
     def f(input):
         x = input
         for i in range(len(num_kernels_arr)):
@@ -76,7 +76,7 @@ def encoder(num_kernels_arr=[10, 15], kernels_sizes_arr=(5, 3), strides_arr=[1,1
         return x
     return f
 
-def decoder(num_kernels_arr=[15, 10, n_channles], kernels_sizes_arr=[3, 5, 1], upsemblings_arr=[1,2,2], names = ['bottleneck',None, None]):
+def decoder(num_kernels_arr=[13, 10, n_channles], kernels_sizes_arr=[3, 5, 1], upsemblings_arr=[1,2,2], names = ['bottleneck',None, None]):
     def f(input):
         x = input
         for i in range(len(num_kernels_arr)):
@@ -149,7 +149,7 @@ def train_canterpillar_with_generator(name):
 def show_reconstruction_by_ae(ecg_sample, name):
     filepath = easygui.fileopenbox("выберите файл с обученной моделью .h5")
     trained_model = load_model(filepath)
-
+    trained_model.summary()
     ecg_sample = np.array([ecg_sample])
     prediction = trained_model.predict(ecg_sample)
 
@@ -162,7 +162,7 @@ def get_ecg_test_sample(num_patient):
     return sample
 
 
-name = "mumu400_"
+name = "alisa13_ae"
 #model = train_canterpillar(name)
 #model = train_canterpillar_with_generator(name)
 ecg_sample = get_ecg_test_sample(num_patient=15)

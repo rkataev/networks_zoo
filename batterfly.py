@@ -24,6 +24,10 @@ from keras.optimizers import (
     adam, sgd, adadelta
 )
 
+from caterpillar_feeder import (
+    ecg_batches_generator_for_classifier
+)
+
 ecg_segment_len = 400
 import matplotlib.pyplot as plt
 from keras import backend as K
@@ -71,13 +75,29 @@ def create_batterfly(num_labels):
     return batterfly_model
 
 def train_batterfly(name):
-    model = create_batterfly(num_labels=10)
+    x_train, x_test, y_train, y_test = prepare_data(seg_len=None)  # вытаскиваем полный непорезанный датасет
+    num_labels = y_train.shape[1]
+    model = create_batterfly(num_labels=num_labels)
     model.summary()
-    x_train, x_test, y_train, y_test = prepare_data(seg_len=ecg_segment_len)
-    history = model.fit(x=x_train, y={"classifier": y_train},
-                        validation_data=(x_test, {"classifier":y_test}),
-                        batch_size=20,
-                        epochs=50)
+    batch_size = 20
+
+    train_generator = ecg_batches_generator_for_classifier(segment_len = ecg_segment_len,
+                                                           batch_size=batch_size,
+                                                           ecg_dataset=x_train,
+                                                           diagnodses=y_train)
+    test_generator = ecg_batches_generator_for_classifier(segment_len = ecg_segment_len,
+                                                           batch_size=20,
+                                                           ecg_dataset=x_test,
+                                                           diagnodses=y_test)
+    steps_per_epoch = 15
+    print("батчей за эпоху будет:" + str(steps_per_epoch))
+    print("в одном батче " + str(batch_size) + " кардиограмм.")
+    history = model.fit_generator(generator=train_generator,
+                                  steps_per_epoch=steps_per_epoch,
+                                  epochs=50,
+                                  validation_data=test_generator,
+                                  validation_steps=1)
+
 
     save_history(history, name)
     model.save(name + '.h5')
@@ -90,7 +110,7 @@ def eval_butterfly():
     #выбираем датасет
     # заставляем модель предсказать
 
-batterfly_name = "batterfly_10"
+batterfly_name = "batterfly_top5_generator"
 train_batterfly(batterfly_name)
 
 
