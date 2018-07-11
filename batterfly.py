@@ -86,7 +86,7 @@ def train_batterfly(name):
                                                            ecg_dataset=x_train,
                                                            diagnodses=y_train)
     test_generator = ecg_batches_generator_for_classifier(segment_len = ecg_segment_len,
-                                                           batch_size=20,
+                                                           batch_size=40,
                                                            ecg_dataset=x_test,
                                                            diagnodses=y_test)
     steps_per_epoch = 15
@@ -104,14 +104,38 @@ def train_batterfly(name):
     return model
 
 def eval_butterfly():
-    # выбираем модель
+    # выбираем модель-классификатор
     filepath_model = easygui.fileopenbox("выберите файл с обученной моделью классиикатором.h5")
     trained_batterfly = load_model(filepath_model)
-    #выбираем датасет
-    # заставляем модель предсказать
+    trained_batterfly.summary()
 
-batterfly_name = "batterfly_top5_generator"
-train_batterfly(batterfly_name)
+    # вытаскиваем полный непорезанный датасет
+    _, x_test, _, y_test = prepare_data(seg_len=None)
+
+    # убеждаемся что датасет подходит к модели
+    output_len = trained_batterfly.output_shape[1]
+    num_labels = y_test.shape[1]
+    assert output_len == num_labels
+
+    # включаем его порезку на сегменты
+    test_generator = ecg_batches_generator_for_classifier(segment_len=ecg_segment_len,
+                                                          batch_size=70,
+                                                          ecg_dataset=x_test,
+                                                          diagnodses=y_test)
+    xy = next(test_generator)
+
+    # заставляем модель предсказать
+    prediction = trained_batterfly.predict_on_batch(x=xy[0])
+    print ("ответ модели:")
+    print(prediction)
+    print("правильный ответ:")
+    print (xy[1])
+
+if __name__ == "__main__":
+    batterfly_name = "batterfly_top5_generator_eval40"
+    #train_batterfly(batterfly_name)
+    eval_butterfly()
+
 
 
 
