@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*
 import pandas as pd
+
 import numpy as np
 import math
 import easygui
@@ -160,7 +161,7 @@ def visualise_result(true_labels, predicted_labels, names_diagnoses):
                     new_row["false(right)"] += 1
         rows.append(new_row)
     df = pd.DataFrame(data=rows)
-    df.plot(kind='bar')
+    df.plot.bar(stacked=True)
     plt.savefig("vis.png")
 
 
