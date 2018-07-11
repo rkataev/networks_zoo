@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*
-
+import pandas as pd
 import numpy as np
 import math
 import easygui
@@ -103,7 +103,7 @@ def train_batterfly(name):
     model.save(name + '.h5')
     return model
 
-def eval_butterfly():
+def eval_butterfly(n_samples):
     # выбираем модель-классификатор
     filepath_model = easygui.fileopenbox("выберите файл с обученной моделью классиикатором.h5")
     trained_batterfly = load_model(filepath_model)
@@ -119,7 +119,7 @@ def eval_butterfly():
 
     # включаем его порезку на сегменты
     test_generator = ecg_batches_generator_for_classifier(segment_len=ecg_segment_len,
-                                                          batch_size=70,
+                                                          batch_size=n_samples,
                                                           ecg_dataset=x_test,
                                                           diagnodses=y_test)
     xy = next(test_generator)
@@ -130,11 +130,46 @@ def eval_butterfly():
     print(prediction)
     print("правильный ответ:")
     print (xy[1])
+    return xy[1], prediction
+
+def visualise_result(true_labels, predicted_labels, names_diagnoses):
+    print (names_diagnoses)
+    # мы хотим для каждого из диагнозов отобразить 4 вещи% true_positive, true_negative, false_positive, false_negative
+    rows = []
+    for j in range(len(names_diagnoses)):
+        new_row = {"true_(right)":0,"true_(mistake)":0, "false(right)":0, "false(mistake)":0}
+        true_label_column_for_desease =  true_labels[:,j]
+        redicted_label_column_for_desease = predicted_labels[:,j]
+        for i in range(len(true_label_column_for_desease)):
+            true_label = true_label_column_for_desease[i]
+            predicted_label = redicted_label_column_for_desease[i]
+            if predicted_label > 0.5:
+                predicted_label = 1
+            else:
+                predicted_label = 0
+
+            if true_label == 1:
+                if predicted_label == 1:
+                    new_row["true_(right)"]+=1
+                if predicted_label == 0:
+                    new_row["false(mistake)"] += 1
+            if true_label == 0:
+                if predicted_label==1:
+                    new_row["true_(mistake)"] += 1
+                if predicted_label==0:
+                    new_row["false(right)"] += 1
+        rows.append(new_row)
+    df = pd.DataFrame(data=rows)
+    df.plot(kind='bar')
+    plt.savefig("vis.png")
+
+
 
 if __name__ == "__main__":
     batterfly_name = "batterfly_top5_generator_eval40"
     #train_batterfly(batterfly_name)
-    eval_butterfly()
+    true_labels, predicted_labels = eval_butterfly(n_samples=300)
+    visualise_result(true_labels, predicted_labels, names_diagnoses=["1", "2", "3", "4", "5"])
 
 
 
