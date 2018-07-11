@@ -64,7 +64,7 @@ def add_head_to_model(trained_model, head_name, gate_name, num_output_neurons):
     optimiser = sgd(momentum=0.9, nesterov=True)
 
     model.compile(optimizer=optimiser,
-                  loss=binary_crossentropy)
+                  loss=mean_squared_error)
     return model
 
 def create_batterfly(num_labels):
@@ -95,7 +95,7 @@ def train_batterfly(name):
     print("в одном батче " + str(batch_size) + " кардиограмм.")
     history = model.fit_generator(generator=train_generator,
                                   steps_per_epoch=steps_per_epoch,
-                                  epochs=150,
+                                  epochs=300,
                                   validation_data=test_generator,
                                   validation_steps=1)
 
@@ -104,11 +104,12 @@ def train_batterfly(name):
     model.save(name + '.h5')
     return model
 
-def eval_butterfly(n_samples):
-    # выбираем модель-классификатор
-    filepath_model = easygui.fileopenbox("выберите файл с обученной моделью классиикатором.h5")
-    trained_batterfly = load_model(filepath_model)
-    trained_batterfly.summary()
+def eval_butterfly(n_samples, trained_batterfly=None):
+    if trained_batterfly is None:
+        # выбираем модель-классификатор
+        filepath_model = easygui.fileopenbox("выберите файл с обученной моделью классиикатором.h5")
+        trained_batterfly = load_model(filepath_model)
+        trained_batterfly.summary()
 
     # вытаскиваем полный непорезанный датасет
     _, x_test, _, y_test = prepare_data(seg_len=None)
@@ -133,11 +134,11 @@ def eval_butterfly(n_samples):
     print (xy[1])
     return xy[1], prediction
 
-def visualise_result(true_labels, predicted_labels, names_diagnoses):
-    print (names_diagnoses)
+def visualise_result(true_labels, predicted_labels):
+
     # мы хотим для каждого из диагнозов отобразить 4 вещи% true_positive, true_negative, false_positive, false_negative
     rows = []
-    for j in range(len(names_diagnoses)):
+    for j in range(len(true_labels[0])):
         new_row = {"true_(right)":0,"true_(mistake)":0, "false(right)":0, "false(mistake)":0}
         true_label_column_for_desease =  true_labels[:,j]
         redicted_label_column_for_desease = predicted_labels[:,j]
@@ -164,9 +165,9 @@ def visualise_result(true_labels, predicted_labels, names_diagnoses):
     df.plot.bar(stacked=True)
     plt.savefig("vis.png")
 
-def visualise_result_binary(true_labels, predicted_labels, names_diagnoses):
+def visualise_result_binary(true_labels, predicted_labels):
     rows = []
-    for j in range(len(names_diagnoses)):
+    for j in range(len(true_labels[0])):
         new_row = {"(right)": 0, "(mistake)": 0}
         true_label_column_for_desease = true_labels[:, j]
         redicted_label_column_for_desease = predicted_labels[:, j]
@@ -188,10 +189,10 @@ def visualise_result_binary(true_labels, predicted_labels, names_diagnoses):
     plt.savefig("vis_binary.png")
 
 if __name__ == "__main__":
-    batterfly_name = "batterfly_top5_oximiron"
-    #train_batterfly(batterfly_name)
-    true_labels, predicted_labels = eval_butterfly(n_samples=300)
-    visualise_result_binary(true_labels, predicted_labels, names_diagnoses=["1", "2", "3", "4", "5"])
+    batterfly_name = "batterfly_top15_sova"
+    #model = train_batterfly(batterfly_name)
+    true_labels, predicted_labels = eval_butterfly(n_samples=600)
+    visualise_result(true_labels, predicted_labels)
 
 
 
