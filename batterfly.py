@@ -80,7 +80,7 @@ def train_batterfly(name):
     num_labels = y_train.shape[1]
     model = create_batterfly(num_labels=num_labels)
     model.summary()
-    batch_size = 20
+    batch_size = 10
 
     train_generator = ecg_batches_generator_for_classifier(segment_len = ecg_segment_len,
                                                            batch_size=batch_size,
@@ -95,7 +95,7 @@ def train_batterfly(name):
     print("в одном батче " + str(batch_size) + " кардиограмм.")
     history = model.fit_generator(generator=train_generator,
                                   steps_per_epoch=steps_per_epoch,
-                                  epochs=50,
+                                  epochs=150,
                                   validation_data=test_generator,
                                   validation_steps=1)
 
@@ -164,13 +164,34 @@ def visualise_result(true_labels, predicted_labels, names_diagnoses):
     df.plot.bar(stacked=True)
     plt.savefig("vis.png")
 
+def visualise_result_binary(true_labels, predicted_labels, names_diagnoses):
+    rows = []
+    for j in range(len(names_diagnoses)):
+        new_row = {"(right)": 0, "(mistake)": 0}
+        true_label_column_for_desease = true_labels[:, j]
+        redicted_label_column_for_desease = predicted_labels[:, j]
+        for i in range(len(true_label_column_for_desease)):
+            true_label = true_label_column_for_desease[i]
+            predicted_label = redicted_label_column_for_desease[i]
+            if predicted_label > 0.5:
+                predicted_label = 1
+            else:
+                predicted_label = 0
 
+            if true_label == predicted_label:
+                new_row["(right)"] += 1
+            else:
+                new_row["(mistake)"] += 1
+        rows.append(new_row)
+    df = pd.DataFrame(data=rows)
+    df.plot.bar(stacked=True)
+    plt.savefig("vis_binary.png")
 
 if __name__ == "__main__":
-    batterfly_name = "batterfly_top5_generator_eval40"
+    batterfly_name = "batterfly_top5_oximiron"
     #train_batterfly(batterfly_name)
     true_labels, predicted_labels = eval_butterfly(n_samples=300)
-    visualise_result(true_labels, predicted_labels, names_diagnoses=["1", "2", "3", "4", "5"])
+    visualise_result_binary(true_labels, predicted_labels, names_diagnoses=["1", "2", "3", "4", "5"])
 
 
 
