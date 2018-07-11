@@ -24,6 +24,7 @@ from keras.losses import (
 from keras.optimizers import (
     adam, sgd, adadelta
 )
+from keras.callbacks import LearningRateScheduler, ReduceLROnPlateau
 
 from caterpillar_feeder import (
     ecg_batches_generator_for_classifier
@@ -34,7 +35,7 @@ import matplotlib.pyplot as plt
 from keras import backend as K
 import tensorflow as tf
 
-
+import cosine_lr
 from dataset_getter import prepare_data
 
 def _get_trained_canterpillar():
@@ -93,11 +94,17 @@ def train_batterfly(name):
     steps_per_epoch = 15
     print("батчей за эпоху будет:" + str(steps_per_epoch))
     print("в одном батче " + str(batch_size) + " кардиограмм.")
+   
+    #уменьшение learning rate автоматически на плато
+    #learning_rate_reduction = ReduceLROnPlateau(monitor='val_loss', factor = 0.1, patience = 5, verbose = 1)
+
+    change_lr = cosine_lr.SGDRScheduler(min_lr=0.0001, max_lr=0.1, steps_per_epoch=np.ceil(15/batch_size), lr_decay=0.8, cycle_length=1, mult_factor=1)
+    
     history = model.fit_generator(generator=train_generator,
                                   steps_per_epoch=steps_per_epoch,
                                   epochs=150,
                                   validation_data=test_generator,
-                                  validation_steps=1)
+                                  validation_steps=1, callbacks=[change_lr])
 
 
     save_history(history, name)
@@ -189,9 +196,9 @@ def visualise_result_binary(true_labels, predicted_labels, names_diagnoses):
 
 if __name__ == "__main__":
     batterfly_name = "batterfly_top5_oximiron"
-    #train_batterfly(batterfly_name)
-    true_labels, predicted_labels = eval_butterfly(n_samples=300)
-    visualise_result_binary(true_labels, predicted_labels, names_diagnoses=["1", "2", "3", "4", "5"])
+    train_batterfly(batterfly_name)
+    #true_labels, predicted_labels = eval_butterfly(n_samples=300)
+    #visualise_result_binary(true_labels, predicted_labels, names_diagnoses=["1", "2", "3", "4", "5"])
 
 
 
