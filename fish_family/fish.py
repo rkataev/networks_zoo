@@ -6,6 +6,14 @@ import numpy as np
 import easygui
 import pickle as pkl
 from caterpillar_feeder import ecg_batches_generator
+from keras.losses import (
+    mean_squared_error
+)
+from keras.optimizers import (
+    adam, sgd, adadelta
+)
+from fish_family.ae import AE
+from utils import save_history
 
 ecg_segment_len = 500
 
@@ -40,10 +48,24 @@ def make_generators(x):
 
 
 def make_fish():
-    pass
+    ae_maker = AE()
+    fish = ae_maker.make_net()
+    fish.compile(optimizer=adam,
+                 loss=mean_squared_error)
+    return fish
 
-def train_fish():
-    pass
+
+def train_fish(fish, name):
+    x= get_healthy_dataset()
+    train_generator, test_generator = make_generators(x)
+    history = fish.fit_generator(generator=train_generator,
+                                  steps_per_epoch=20,
+                                  epochs=50,
+                                  validation_data=test_generator,
+                                  validation_steps=1)
+
+    save_history(history, name)
+    fish.save(name + '.h5')
 
 def reconstruct_fish():
     pass
@@ -51,6 +73,9 @@ def reconstruct_fish():
 def eval_fish_with_diverse():
     pass
 
-
+if __name__ == "__main__":
+    name = "fish"
+    fish = make_fish()
+    train_fish(fish)
 
 
