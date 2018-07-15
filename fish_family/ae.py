@@ -56,7 +56,30 @@ def deconv_block(num_kernels, kernel_size, upsampling):
 
     return f
 
+def _decoder(num_kernels_arr, kernels_sizes_arr, upsemblings_arr, n_channles):
+        def f(input):
+            x = input
+            for i in range(len(num_kernels_arr)):
+                num_kernels = num_kernels_arr[i]
+                kernel_size = kernels_sizes_arr[i]
+                upsampling = upsemblings_arr[i]
+                x = deconv_block(num_kernels, kernel_size, upsampling)(x)
+            x = deconv_block(num_kernels=n_channles, kernel_size=5, upsampling=2)(x)
+            return x
 
+        return f
+
+def _encoder(num_kernels_arr, kernels_sizes_arr, strides_arr):
+    def f(input):
+        x = input
+        for i in range(len(num_kernels_arr)):
+            num_kernels = num_kernels_arr[i]
+            kernel_size = kernels_sizes_arr[i]
+            stride = strides_arr[i]
+            x = conv_block(num_kernels, kernel_size, stride)(x)
+        x = conv_block(num_kernels=1, kernel_size=3, stride=1)(x)
+        return x
+    return f
 
 class AE:
     def __init__(self):
@@ -68,33 +91,19 @@ class AE:
         self.strides_arr = [2, 2]
 
     def encoder(self):
-        def f(input):
-            x = input
-            for i in range(len(self.num_kernels_arr)):
-                num_kernels = self.num_kernels_arr[i]
-                kernel_size = self.kernels_sizes_arr[i]
-                stride = self.strides_arr[i]
-                x = conv_block(num_kernels, kernel_size, stride)(x)
-            x = conv_block(num_kernels=1, kernel_size=3, stride=1)(x)
-
-            return x
-        return f
+        return _encoder(num_kernels_arr=self.num_kernels_arr,
+                        kernels_sizes_arr=self.kernels_sizes_arr,
+                        strides_arr=self.strides_arr)
 
     def decoder(self):
         num_kernels_arr = list(reversed(self.num_kernels_arr))
         upsemblings_arr=[2*x for x in self.strides_arr]
-        kernels_sizes_arr = list(reversed(self.kernels_sizes_arr)
-        def f(input):
-            x = input
-            for i in range(len(num_kernels_arr)):
-                num_kernels = num_kernels_arr[i]
-                kernel_size = kernels_sizes_arr[i]
-                upsampling = upsemblings_arr[i]
-                x = deconv_block(num_kernels, kernel_size, upsampling)(x)
-            x = deconv_block(num_kernels=self.n_channles, kernel_size=5, upsampling=2)(x)
-            return x
+        kernels_sizes_arr = list(reversed(self.kernels_sizes_arr))
+        return _decoder(num_kernels_arr=num_kernels_arr,
+                        kernels_sizes_arr=kernels_sizes_arr,
+                        upsemblings_arr=upsemblings_arr,
+                        n_channles=self.n_channles)
 
-        return f
 
     def make_net(self):
         input_shape = (self.ecg_segment_len, 1, self.n_channles)

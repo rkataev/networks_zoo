@@ -42,9 +42,10 @@ def _get_trained_canterpillar():
     trained_model = load_model(filepath)
     return trained_model
 
-def get_classifier(output_neurons, hidden_lens=[10, 5, 3]):
+def get_classifier(output_neurons, hidden_lens=[10, 10, 10, 10,10,10]):
     def f(input):
         x = Flatten()(input)
+        x= Dropout(rate=0.25)(x)
         i =0
         for hidden_len in hidden_lens:
             x = Dense(units=hidden_len, activation='relu')(x)
@@ -64,7 +65,7 @@ def add_head_to_model(trained_model, head_name, gate_name, num_output_neurons):
     optimiser = sgd(momentum=0.9, nesterov=True)
 
     model.compile(optimizer=optimiser,
-                  loss=mean_squared_error)
+                  loss=binary_crossentropy)
     return model
 
 def create_batterfly(num_labels):
@@ -80,7 +81,7 @@ def train_batterfly(name):
     num_labels = y_train.shape[1]
     model = create_batterfly(num_labels=num_labels)
     model.summary()
-    batch_size = 10
+    batch_size = 20
 
     train_generator = ecg_batches_generator_for_classifier(segment_len = ecg_segment_len,
                                                            batch_size=batch_size,
@@ -90,7 +91,7 @@ def train_batterfly(name):
                                                            batch_size=40,
                                                            ecg_dataset=x_test,
                                                            diagnodses=y_test)
-    steps_per_epoch = 15
+    steps_per_epoch = 25
     print("батчей за эпоху будет:" + str(steps_per_epoch))
     print("в одном батче " + str(batch_size) + " кардиограмм.")
     history = model.fit_generator(generator=train_generator,
@@ -189,8 +190,8 @@ def visualise_result_binary(true_labels, predicted_labels):
     plt.savefig("vis_binary.png")
 
 if __name__ == "__main__":
-    batterfly_name = "batterfly_top15_sova"
-    #model = train_batterfly(batterfly_name)
+    batterfly_name = "batterfly_top15_anna"
+    #train_batterfly(batterfly_name)
     true_labels, predicted_labels = eval_butterfly(n_samples=600)
     visualise_result(true_labels, predicted_labels)
 
