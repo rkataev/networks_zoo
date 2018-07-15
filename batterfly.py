@@ -24,7 +24,7 @@ from keras.losses import (
 from keras.optimizers import (
     adam, sgd, adadelta
 )
-from keras.callbacks import LearningRateScheduler, ReduceLROnPlateau
+from keras.callbacks import LearningRateScheduler, ReduceLROnPlateau, TensorBoard
 
 from caterpillar_feeder import (
     ecg_batches_generator_for_classifier
@@ -88,9 +88,12 @@ def train_batterfly(name):
                                                            ecg_dataset=x_train,
                                                            diagnodses=y_train)
     test_generator = ecg_batches_generator_for_classifier(segment_len = ecg_segment_len,
-                                                           batch_size=40,
+                                                           batch_size=300,
                                                            ecg_dataset=x_test,
                                                            diagnodses=y_test)
+    
+    val_y = next(test_generator)
+
     steps_per_epoch = 15
     print("батчей за эпоху будет:" + str(steps_per_epoch))
     print("в одном батче " + str(batch_size) + " кардиограмм.")
@@ -98,13 +101,15 @@ def train_batterfly(name):
     #уменьшение learning rate автоматически на плато
     #learning_rate_reduction = ReduceLROnPlateau(monitor='val_loss', factor = 0.1, patience = 5, verbose = 1)
 
-    change_lr = cosine_lr.SGDRScheduler(min_lr=0.0001, max_lr=0.1, steps_per_epoch=np.ceil(15/batch_size), lr_decay=0.8, cycle_length=1, mult_factor=1)
+    #изменение LR по методу SGDR
+    #change_lr = cosine_lr.SGDRScheduler(min_lr=0.0001, max_lr=0.1, steps_per_epoch=np.ceil(15/batch_size), lr_decay=0.8, cycle_length=1, mult_factor=1)
     
+    tb_callback = TensorBoard(log_dir='./butterfly_logs', histogram_freq=20, write_graph=True, write_grads=True)
     history = model.fit_generator(generator=train_generator,
                                   steps_per_epoch=steps_per_epoch,
                                   epochs=150,
-                                  validation_data=test_generator,
-                                  validation_steps=1, callbacks=[change_lr])
+                                  validation_data=val_y,
+                                  validation_steps=1, callbacks=[tb_callback])
 
 
     save_history(history, name)
@@ -197,8 +202,8 @@ def visualise_result_binary(true_labels, predicted_labels, names_diagnoses):
 if __name__ == "__main__":
     batterfly_name = "batterfly_top5_oximiron"
     train_batterfly(batterfly_name)
-    #true_labels, predicted_labels = eval_butterfly(n_samples=300)
-    #visualise_result_binary(true_labels, predicted_labels, names_diagnoses=["1", "2", "3", "4", "5"])
+    true_labels, predicted_labels = eval_butterfly(n_samples=300)
+    visualise_result_binary(true_labels, predicted_labels, names_diagnoses=["1", "2", "3", "4", "5"])
 
 
 

@@ -5,3 +5,6 @@ logs_worm_spiridon2/
 *.png
 *.hdf5
 *.h5
+*.pkl
+butterfly_logs/
+caterpillar_logs/

@@ -52,7 +52,6 @@ class SGDRScheduler(Callback):
         '''Calculate the learning rate.'''
         fraction_to_restart = self.batch_since_restart / (self.steps_per_epoch * self.cycle_length)
         lr = self.min_lr + 0.5 * (self.max_lr - self.min_lr) * (1 + np.cos(fraction_to_restart * np.pi))
-        print('NEW LR = ' + str(lr))
         return lr
 
     def on_train_begin(self, logs={}):

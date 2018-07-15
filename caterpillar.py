@@ -13,7 +13,7 @@ from keras.layers import (
 
 from keras.layers import merge
 
-
+from keras.callbacks import TensorBoard
 from keras.models import Model
 from keras.losses import (
     mean_squared_error
@@ -135,12 +135,15 @@ def train_canterpillar_with_generator(name):
     test_generator = ecg_batches_generator(segment_len=ecg_segment_len,
                                             batch_size=batch_size,
                                             ecg_dataset=x_test)
+    
+    tb_callback = TensorBoard(log_dir='./caterpillar_logs', histogram_freq=5, write_graph=True, write_grads=True)
+    y_test = next(test_generator)
 
     history = model.fit_generator(generator=train_generator,
                                   steps_per_epoch=steps_per_epoch,
                                   epochs=50,
-                                  validation_data=test_generator,
-                                  validation_steps=2)
+                                  validation_data=y_test,
+                                  validation_steps=2, callbacks = [tb_callback])
 
     save_history(history, name)
     model.save(name+'.h5')
@@ -164,9 +167,9 @@ def get_ecg_test_sample(num_patient):
 
 name = "alisa13_ae"
 #model = train_canterpillar(name)
-#model = train_canterpillar_with_generator(name)
-ecg_sample = get_ecg_test_sample(num_patient=15)
-show_reconstruction_by_ae(ecg_sample, name)
+model = train_canterpillar_with_generator(name)
+#ecg_sample = get_ecg_test_sample(num_patient=15)
+#show_reconstruction_by_ae(ecg_sample, name)
 
 
 
