@@ -29,7 +29,7 @@ from caterpillar_feeder import (
     ecg_batches_generator_for_classifier
 )
 
-ecg_segment_len = 400
+ecg_segment_len = 512
 import matplotlib.pyplot as plt
 from keras import backend as K
 import tensorflow as tf
@@ -42,16 +42,26 @@ def _get_trained_canterpillar():
     trained_model = load_model(filepath)
     return trained_model
 
-def get_classifier(output_neurons, hidden_lens=[10, 10, 10, 10,10,10]):
-    def f(input):
-        x = Flatten()(input)
-        x= Dropout(rate=0.25)(x)
-        i =0
-        for hidden_len in hidden_lens:
-            x = Dense(units=hidden_len, activation='relu')(x)
+def conv_block(num_kernels, kernel_size, stride, name):
+    def f(prev):
+        conv = prev
+        conv = Conv2D(filters=num_kernels, kernel_size=(kernel_size,1), padding='same', strides=(stride,1), name=name)(conv)
+        conv = BatchNormalization(name=name+"_bn")(conv)
+        conv = Activation('relu', name=name+"_ac")(conv)
+        conv = MaxPooling2D(pool_size=(2,1), name=name+"_mpool")(conv)
+        return conv
 
-            x = BatchNormalization(name = "bn_classifier_" + str(i) )(x)
-            i+=1
+    return f
+
+def get_classifier(output_neurons):
+    def f(input):
+
+        x = input
+        f = conv_block(num_kernels=3, kernel_size=3, stride=1, name = "first")
+        x = f(x)
+        f = conv_block(num_kernels=3, kernel_size=3, stride=1, name="second")
+        x = f(x)
+        x = Flatten(name = "cl_flatten")(x)
         x = Dense(units=output_neurons, activation='sigmoid', name='classifier')(x)
         return x
     return f
@@ -191,9 +201,9 @@ def visualise_result_binary(true_labels, predicted_labels):
 
 if __name__ == "__main__":
     batterfly_name = "batterfly_top15_anna"
-    #train_batterfly(batterfly_name)
-    true_labels, predicted_labels = eval_butterfly(n_samples=600)
-    visualise_result(true_labels, predicted_labels)
+    train_batterfly(batterfly_name)
+    #true_labels, predicted_labels = eval_butterfly(n_samples=600)
+    #visualise_result(true_labels, predicted_labels)
 
 
 

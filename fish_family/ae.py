@@ -33,25 +33,25 @@ from utils import (
     draw_reconstruction_to_png, save_history
 )
 
-def conv_block(num_kernels, kernel_size, stride):
+def conv_block(num_kernels, kernel_size, stride, activation='relu'):
     def f(prev):
         conv = prev
-        conv = SeparableConv2D(filters=num_kernels, kernel_size=(kernel_size,1), padding='same', strides=(stride,1))(conv)
+        conv = Conv2D(filters=num_kernels, kernel_size=(kernel_size,1), padding='same', strides=(stride,1))(conv)
         conv = BatchNormalization()(conv)
-        conv = Activation('linear')(conv)
+        conv = Activation(activation)(conv)
         conv = MaxPooling2D(pool_size=(2,1))(conv)
         return conv
 
     return f
 
-def deconv_block(num_kernels, kernel_size, upsampling):
+def deconv_block(num_kernels, kernel_size, upsampling, activation='relu'):
     def f(prev):
         deconv = prev
         deconv = UpSampling2D(size=(upsampling, 1))(deconv)
         #deconv = Conv2DTranspose(filters=num_kernels, kernel_size=(kernel_size,1), padding='same')(deconv)
-        deconv = SeparableConv2D(filters=num_kernels, kernel_size=(kernel_size,1), padding='same')(deconv)
+        deconv = Conv2D(filters=num_kernels, kernel_size=(kernel_size,1), padding='same')(deconv)
         deconv = BatchNormalization()(deconv)
-        deconv = Activation('linear')(deconv)
+        deconv = Activation(activation=activation)(deconv)
         return deconv
 
     return f
@@ -64,7 +64,7 @@ def _decoder(num_kernels_arr, kernels_sizes_arr, upsemblings_arr, n_channles):
                 kernel_size = kernels_sizes_arr[i]
                 upsampling = upsemblings_arr[i]
                 x = deconv_block(num_kernels, kernel_size, upsampling)(x)
-            x = deconv_block(num_kernels=n_channles, kernel_size=5, upsampling=2)(x)
+            x = deconv_block(num_kernels=n_channles, kernel_size=5, upsampling=2, activation='linear')(x)
             return x
 
         return f
@@ -77,7 +77,7 @@ def _encoder(num_kernels_arr, kernels_sizes_arr, strides_arr):
             kernel_size = kernels_sizes_arr[i]
             stride = strides_arr[i]
             x = conv_block(num_kernels, kernel_size, stride)(x)
-        x = conv_block(num_kernels=1, kernel_size=3, stride=1)(x)
+        x = conv_block(num_kernels=1, kernel_size=3, stride=1, activation='linear')(x)
         return x
     return f
 
@@ -86,9 +86,9 @@ class AE:
         self.ecg_segment_len = 512
         self.n_channles = 12
 
-        self.num_kernels_arr=[10, 13]
-        self.kernels_sizes_arr=[5, 3]
-        self.strides_arr = [2, 2]
+        self.num_kernels_arr=[15, 20, 15]
+        self.kernels_sizes_arr=[5, 3,3]
+        self.strides_arr = [2, 1,1]
 
     def encoder(self):
         return _encoder(num_kernels_arr=self.num_kernels_arr,

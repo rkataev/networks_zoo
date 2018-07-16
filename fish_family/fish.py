@@ -1,21 +1,23 @@
 # создаем базовый автокодировщик
 from sklearn.model_selection import train_test_split
 from pprint import pprint
-
+from keras.models import load_model
 import numpy as np
 import easygui
 import pickle as pkl
 from caterpillar_feeder import ecg_batches_generator
 from keras.losses import (
-    mean_squared_error
+    mean_squared_error, binary_crossentropy
 )
 from keras.optimizers import (
     adam, sgd, adadelta
 )
 from fish_family.ae import AE
-from utils import save_history
+from utils import (
+    save_history, show_reconstruction_by_ae
+)
 
-ecg_segment_len = 500
+ecg_segment_len =512
 
 
 def get_healthy_dataset():
@@ -46,11 +48,18 @@ def make_generators(x):
                                            ecg_dataset=x_test)
     return train_generator, test_generator
 
+def get_ecg_test_sample():
+    x = get_healthy_dataset()
+    test_generator = ecg_batches_generator(segment_len=ecg_segment_len,
+                                           batch_size=1,
+                                           ecg_dataset=x)
+    sample = next(test_generator)[0]
+    return sample[0]
 
 def make_fish():
     ae_maker = AE()
     fish = ae_maker.make_net()
-    fish.compile(optimizer=adam,
+    fish.compile(optimizer= sgd(momentum=0.9, nesterov=True),
                  loss=mean_squared_error)
     return fish
 
@@ -68,14 +77,15 @@ def train_fish(fish, name):
     fish.save(name + '.h5')
 
 def reconstruct_fish():
-    pass
+    sample = get_ecg_test_sample()
+    show_reconstruction_by_ae(ecg_sample=sample, name='fish.png')
 
 def eval_fish_with_diverse():
+    #собираем активации ботлнека для здоровых и нездоровых
     pass
 
 if __name__ == "__main__":
     name = "fish"
-    fish = make_fish()
-    train_fish(fish)
-
+    #train_fish(make_fish(), name)
+    reconstruct_fish()
 
