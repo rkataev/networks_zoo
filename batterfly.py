@@ -28,7 +28,9 @@ from keras.optimizers import (
 from caterpillar_feeder import (
     ecg_batches_generator_for_classifier
 )
-
+from binary_dataset import (
+    get_generators
+)
 ecg_segment_len = 512
 import matplotlib.pyplot as plt
 from keras import backend as K
@@ -59,14 +61,9 @@ def get_classifier(output_neurons):
         x = input
         f = conv_block(num_kernels=5, kernel_size=3, stride=1, name = "first")
         x = f(x)
-        f = conv_block(num_kernels=5, kernel_size=3, stride=1, name="second")
-        x = f(x)
-        f = conv_block(num_kernels=5, kernel_size=3, stride=1, name="third")
-        x = f(x)
+
         x = Flatten(name = "cl_flatten")(x)
-        x = Dense(units=200, activation='sigmoid', name='pre-classifier')(x)
-        x = Dense(units=100, activation='sigmoid', name='pre3-classifier')(x)
-        x = Dense(units=100, activation='sigmoid', name='pre2classifier')(x)
+
         x = Dense(units=output_neurons, activation='sigmoid', name='classifier')(x)
         return x
     return f
@@ -90,6 +87,29 @@ def create_batterfly(num_labels):
                                         gate_name='bottleneck',
                                         num_output_neurons=num_labels )
     return batterfly_model
+
+def train_butterfly_binary(name):
+    model = create_batterfly(num_labels=1)
+    model.summary()
+    optimiser = sgd(momentum=0.9, nesterov=True)
+
+    model.compile(optimizer=optimiser,
+                 loss=mean_squared_error,
+                metrics=['accuracy'])
+
+    train_generator, test_generator = get_generators(train_batch=20, test_batch=50, segment_len=ecg_segment_len)
+    steps_per_epoch = 30
+
+    history = model.fit_generator(generator=train_generator,
+                                  steps_per_epoch=steps_per_epoch,
+                                  epochs=50,
+                                  validation_data=test_generator,
+                                  validation_steps=2)
+
+    save_history(history, name)
+    model.save(name+'.h5')
+
+    return model
 
 def train_batterfly(name):
     x_train, x_test, y_train, y_test = prepare_data(seg_len=None)  # вытаскиваем полный непорезанный датасет
@@ -219,11 +239,12 @@ def visualise_result_binary(true_labels, predicted_labels):
     plt.savefig("vis_binary.png")
 
 if __name__ == "__main__":
-    batterfly_name = "batterfly_top15_anna"
-    true_labels, predicted_labels =train_batterfly(batterfly_name)
+    name = "batterfly_top15_anna"
+    #true_labels, predicted_labels =train_batterfly(batterfly_name)
     #true_labels, predicted_labels = eval_butterfly(n_samples=900)
-    visualise_result(true_labels, predicted_labels)
-    visualise_result_binary(true_labels, predicted_labels)
+    #visualise_result(true_labels, predicted_labels)
+    #visualise_result_binary(true_labels, predicted_labels)
+    train_butterfly_binary(name)
 
 
 

@@ -128,6 +128,7 @@ def train_canterpillar_with_generator(name):
     model.save(name+'.h5')
     return model
 
+
 def show_reconstruction_by_ae(ecg_sample, name):
     filepath = easygui.fileopenbox("выберите файл с обученной моделью .h5")
     trained_model = load_model(filepath)

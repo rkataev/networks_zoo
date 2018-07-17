@@ -49,7 +49,16 @@ def save_history(history, canterpillar_name):
     plt.ylabel('loss')
     plt.xlabel('epoch')
     plt.legend(['train', 'test'], loc='upper left')
-    plt.savefig(canterpillar_name+".png")
+    plt.savefig(canterpillar_name+"_loss.png")
+
+    if 'acc' in history.history.keys():
+        plt.plot(history.history['acc'])
+        plt.plot(history.history['val_acc'])
+        plt.title('model loss')
+        plt.ylabel('acc')
+        plt.xlabel('epoch')
+        plt.legend(['train', 'test'], loc='upper left')
+        plt.savefig(canterpillar_name + "_acc.png")
 
 def show_reconstruction_by_ae(ecg_sample, name):
     filepath = easygui.fileopenbox("выберите файл с обученной моделью .h5")

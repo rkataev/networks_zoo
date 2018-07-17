@@ -9,7 +9,7 @@ from caterpillar_feeder import (
 only_healthy_pkl ="./fish_family/ONLY_healthy.pkl"
 only_ill_pkl = "./fish_family/No_healthy90.pkl"
 
-def get_generators():
+def get_generators(train_batch=30, test_batch=50, segment_len=512):
     #вытаскиваем первый датасет
     infile = open(only_healthy_pkl, 'rb')
     x_healthy = np.array(pkl.load(infile)['x'])
@@ -29,8 +29,8 @@ def get_generators():
     x_test, y_test = _get_xy(x_ill_test, x_healthy_test)
 
     #делаем генераторы
-    test_generetor = ecg_batches_generator_for_classifier(segment_len=512, batch_size=300, ecg_dataset=x_test, diagnodses=y_test)
-    train_generator = ecg_batches_generator_for_classifier(segment_len=512, batch_size=300, ecg_dataset=x_train, diagnodses=y_train)
+    test_generetor = ecg_batches_generator_for_classifier(segment_len=segment_len, batch_size=test_batch, ecg_dataset=x_test, diagnodses=y_test)
+    train_generator = ecg_batches_generator_for_classifier(segment_len=segment_len, batch_size=train_batch, ecg_dataset=x_train, diagnodses=y_train)
     return train_generator, test_generetor
 
 def _get_xy(x_ill, x_healthy):
@@ -49,5 +49,5 @@ def _get_xy(x_ill, x_healthy):
     return X, np.array(Y)
 
 
-train_generator, test_generetor = get_generators()
+train_generator, test_generetor = get_generators(train_batch=30, test_batch=50, segment_len=512)
 eval_set = next(test_generetor)
