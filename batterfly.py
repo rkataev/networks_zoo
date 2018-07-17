@@ -22,7 +22,7 @@ from keras.losses import (
     mean_squared_error, binary_crossentropy
 )
 from keras.optimizers import (
-    adam, sgd, adadelta
+    adam, sgd, adadelta, adagrad
 )
 
 from caterpillar_feeder import (
@@ -47,7 +47,7 @@ def conv_block(num_kernels, kernel_size, stride, name):
         conv = prev
         conv = Conv2D(filters=num_kernels, kernel_size=(kernel_size,1), padding='same', strides=(stride,1), name=name)(conv)
         conv = BatchNormalization(name=name+"_bn")(conv)
-        conv = Activation('relu', name=name+"_ac")(conv)
+        conv = Activation('elu', name=name+"_ac")(conv)
         conv = MaxPooling2D(pool_size=(2,1), name=name+"_mpool")(conv)
         return conv
 
@@ -57,11 +57,16 @@ def get_classifier(output_neurons):
     def f(input):
 
         x = input
-        f = conv_block(num_kernels=3, kernel_size=3, stride=1, name = "first")
+        f = conv_block(num_kernels=5, kernel_size=3, stride=1, name = "first")
         x = f(x)
-        f = conv_block(num_kernels=3, kernel_size=3, stride=1, name="second")
+        f = conv_block(num_kernels=5, kernel_size=3, stride=1, name="second")
+        x = f(x)
+        f = conv_block(num_kernels=5, kernel_size=3, stride=1, name="third")
         x = f(x)
         x = Flatten(name = "cl_flatten")(x)
+        x = Dense(units=200, activation='sigmoid', name='pre-classifier')(x)
+        x = Dense(units=100, activation='sigmoid', name='pre3-classifier')(x)
+        x = Dense(units=100, activation='sigmoid', name='pre2classifier')(x)
         x = Dense(units=output_neurons, activation='sigmoid', name='classifier')(x)
         return x
     return f
@@ -72,7 +77,7 @@ def add_head_to_model(trained_model, head_name, gate_name, num_output_neurons):
     bottleneck = trained_model.get_layer(name=gate_name).output
     output = get_classifier(output_neurons=num_output_neurons)(bottleneck)
     model = Model(inputs=trained_model.input, outputs=output, name=head_name)
-    optimiser = sgd(momentum=0.9, nesterov=True)
+    optimiser = adagrad(lr=0.02)#sgd(momentum=0.9, nesterov=True)
 
     model.compile(optimizer=optimiser,
                   loss=binary_crossentropy)
@@ -91,7 +96,7 @@ def train_batterfly(name):
     num_labels = y_train.shape[1]
     model = create_batterfly(num_labels=num_labels)
     model.summary()
-    batch_size = 20
+    batch_size = 30
 
     train_generator = ecg_batches_generator_for_classifier(segment_len = ecg_segment_len,
                                                            batch_size=batch_size,
@@ -101,19 +106,33 @@ def train_batterfly(name):
                                                            batch_size=40,
                                                            ecg_dataset=x_test,
                                                            diagnodses=y_test)
-    steps_per_epoch = 25
+    steps_per_epoch = 40
     print("батчей за эпоху будет:" + str(steps_per_epoch))
     print("в одном батче " + str(batch_size) + " кардиограмм.")
     history = model.fit_generator(generator=train_generator,
                                   steps_per_epoch=steps_per_epoch,
-                                  epochs=300,
+                                  epochs=50,
                                   validation_data=test_generator,
                                   validation_steps=1)
 
 
     save_history(history, name)
     model.save(name + '.h5')
-    return model
+
+    eval_generator = ecg_batches_generator_for_classifier(segment_len=ecg_segment_len,
+                                                          batch_size=700,
+                                                          ecg_dataset=x_test,
+                                                          diagnodses=y_test)
+    xy = next(eval_generator)
+
+    # заставляем модель предсказать
+    prediction = model.predict_on_batch(x=xy[0])
+    print("ответ модели:")
+    print(prediction)
+    print("правильный ответ:")
+    print(xy[1])
+    return xy[1], prediction
+
 
 def eval_butterfly(n_samples, trained_batterfly=None):
     if trained_batterfly is None:
@@ -201,9 +220,10 @@ def visualise_result_binary(true_labels, predicted_labels):
 
 if __name__ == "__main__":
     batterfly_name = "batterfly_top15_anna"
-    train_batterfly(batterfly_name)
-    #true_labels, predicted_labels = eval_butterfly(n_samples=600)
-    #visualise_result(true_labels, predicted_labels)
+    true_labels, predicted_labels =train_batterfly(batterfly_name)
+    #true_labels, predicted_labels = eval_butterfly(n_samples=900)
+    visualise_result(true_labels, predicted_labels)
+    visualise_result_binary(true_labels, predicted_labels)
 
 
 
