@@ -75,7 +75,7 @@ def annotated_generator(segment_len, batch_size, dataset_in=None):
     #отступ от начала и конца
     offset = 700
 
-    starting_position = np.random.randint(offset, ecg_dataset.shape[1] - max(segment_len, offset))
+    starting_position = np.random.randint(offset, ecg_dataset.shape[1] - segment_len - offset)
     ending_position = starting_position + segment_len
     ecg_rand = np.random.randint(0, ecg_dataset.shape[0])
 
