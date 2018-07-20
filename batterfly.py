@@ -137,7 +137,7 @@ def train_batterfly(name):
     #изменение LR по методу SGDR
     #change_lr = cosine_lr.SGDRScheduler(min_lr=0.0001, max_lr=0.1, steps_per_epoch=np.ceil(15/batch_size), lr_decay=0.8, cycle_length=1, mult_factor=1)
     
-    tb_callback = TensorBoard(log_dir='./butterfly_logs', histogram_freq=20, write_graph=True, write_grads=True)
+    #tb_callback = TensorBoard(log_dir='./butterfly_logs', histogram_freq=20, write_graph=True, write_grads=True)
     history = model.fit_generator(generator=train_generator,
                                   steps_per_epoch=steps_per_epoch,
                                   epochs=50,

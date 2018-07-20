@@ -8,3 +8,5 @@ logs_worm_spiridon2/
 *.pkl
 butterfly_logs/
 caterpillar_logs/
+logs/
+datasets/

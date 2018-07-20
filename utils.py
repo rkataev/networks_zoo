@@ -2,6 +2,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import easygui
+import pickle as pkl
 from keras.models import load_model
 #plt.xkcd()
 
@@ -69,4 +70,9 @@ def show_reconstruction_by_ae(ecg_sample, name):
 
     draw_reconstruction_to_png(ecg_sample[0],prediction[0], name)
 
+def open_pickle(path):
+    infile = open(path, 'rb')
+    load_pkl = pkl.load(infile)
+    infile.close()
+    return load_pkl
 
