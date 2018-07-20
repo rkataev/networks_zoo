@@ -16,10 +16,15 @@ def get_dataset_no_partitioning():
     new_dict = pkl.load(infile)
     infile.close()
 
-    assert len(new_dict['x']) == len(new_dict['y'])
-    x, y = np.array(new_dict['x']), np.array(new_dict['y'])
-    print(len(new_dict['x']), " записей ")
-    return x, y
+    #assert len(new_dict['x']) == len(new_dict['y'])
+    if 'y' in new_dict:
+        x, y = np.array(new_dict['x']), np.array(new_dict['y'])
+        print(len(new_dict['x']), " записей ")
+        return x, y
+    else:
+        x= np.array(new_dict['x'])
+        print(len(new_dict['x']), " записей ")
+        return x
 
 
 

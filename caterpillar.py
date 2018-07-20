@@ -32,7 +32,7 @@ from utils import (
     draw_reconstruction_to_png, save_history
 )
 
-ecg_segment_len = 400
+ecg_segment_len = 512
 n_channles = 12
 
 def prepare_data_for_canterpillar(segment_len=None):
@@ -96,24 +96,6 @@ def canterpillar_net():
     model = Model(input, decoder()(code))
     return model
 
-def train_canterpillar(name):
-    model = canterpillar_net()
-    model.summary()
-    optimiser = sgd(momentum=0.9, nesterov=True)
-
-    model.compile(optimizer=optimiser,
-                 loss=mean_squared_error)
-
-
-    x_train, x_test = prepare_data_for_canterpillar(segment_len=ecg_segment_len)
-    history = model.fit(x=x_train, y=x_train,
-                       validation_data=(x_test, x_test),
-                        batch_size=20,
-                       epochs=50)
-
-    save_history(history, name)
-    model.save(name+'.h5')
-    return model
 
 def train_canterpillar_with_generator(name):
     model = canterpillar_net()
@@ -149,6 +131,7 @@ def train_canterpillar_with_generator(name):
     model.save(name+'.h5')
     return model
 
+
 def show_reconstruction_by_ae(ecg_sample, name):
     filepath = easygui.fileopenbox("выберите файл с обученной моделью .h5")
     trained_model = load_model(filepath)
@@ -165,11 +148,10 @@ def get_ecg_test_sample(num_patient):
     return sample
 
 
-name = "alisa13_ae"
-#model = train_canterpillar(name)
-model = train_canterpillar_with_generator(name)
-#ecg_sample = get_ecg_test_sample(num_patient=15)
-#show_reconstruction_by_ae(ecg_sample, name)
+name = "mimino_ae"
+#model = train_canterpillar_with_generator(name)
+ecg_sample = get_ecg_test_sample(num_patient=29)
+show_reconstruction_by_ae(ecg_sample, name)
 
 
 
