@@ -8,6 +8,7 @@ from utils import open_pickle
 from sklearn.model_selection import train_test_split
 from annotation.model import unet
 from utils import save_history
+from annotation.trained_model_testing import test_model
 
 dataset_path = "./DSET_argentina.pkl"
 segment_len=512
@@ -51,6 +52,10 @@ def train(name):
 
     save_history(history, name)
     model.save(name + '.h5')
+
+def eval_model(model, test_gererator, name):
+    batch = next(test_gererator)
+    test_model(model, batch, name)
 
 if __name__ == "__main__":
     name = "sofia_annotator"
