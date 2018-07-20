@@ -8,6 +8,7 @@ from caterpillar_feeder import (
 
 only_healthy_pkl ="./fish_family/ONLY_healthy.pkl"
 only_ill_pkl = "./fish_family/No_healthy90.pkl"
+healthy_rythm_pkl = './fish_family/healthy.pkl'
 
 def get_generators(train_batch=30, test_batch=50, segment_len=512):
     #вытаскиваем первый датасет
@@ -16,7 +17,7 @@ def get_generators(train_batch=30, test_batch=50, segment_len=512):
     infile.close()
 
     #вытаскиваем второй датасет
-    infile = open(only_healthy_pkl, 'rb')
+    infile = open(healthy_rythm_pkl, 'rb')
     x_ill = np.array(pkl.load(infile)['x'])
     infile.close()
 

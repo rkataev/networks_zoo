@@ -121,7 +121,7 @@ def TEST_generator_for_classifier():
 def TEST_generator_for_annotator():
     segment_len = 10
     batch_size = 2
-    dataset_in = open_pickle('./datasets/DSET_argentina.pkl')
+    dataset_in = open_pickle('./DSET_argentina.pkl')
     my_generator = annotated_generator(segment_len, batch_size, dataset_in)
 
     batch_xy = next(my_generator)
