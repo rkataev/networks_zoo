@@ -68,7 +68,7 @@ def eval_models_in_folder():
         filename = os.fsdecode(file)
         if filename.endswith(".h5"):
             model = load_model(os.path.join(folder,filename))
-            test_model(model, batch, name="test_seria_")
+            test_model(model, batch, name="VIS_"+filename[0:-len(".h5")])
 
 
 if __name__ == "__main__":
