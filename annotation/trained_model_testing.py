@@ -9,7 +9,10 @@ import pickle as pkl
 
 def zero_to_nan(values):
     """Replace every 0 with 'nan' and return a copy."""
-    return [float('nan') if x==0 else x for x in values]
+    return [float('nan') if x<0.01 else x for x in values]
+
+def make_mask(values):
+    return [0 if x <=0.5 else 1.0 for x in values]
 
 def draw_prediction_and_reality(ecg_signal, prediction, right_answer, plot_name):
     """
@@ -28,17 +31,25 @@ def draw_prediction_and_reality(ecg_signal, prediction, right_answer, plot_name)
     assert len(prediction) == len(right_answer) == 3 #3 бинарные маски
 
     f, (ax1, ax2, ax3) = plt.subplots(1, 3, sharey=True, sharex=True)
-    ax1.plot(ecg_signal)
-    ax2.plot(ecg_signal)
-    ax3.plot(ecg_signal)
+    #ax1.plot(ecg_signal)
+    #ax2.plot(ecg_signal)
+    #ax3.plot(ecg_signal)
+    x = range(0, len(ecg_signal))
 
-    ax1.plot(zero_to_nan(prediction[0]), 'ko', markersize=3, alpha=0.7)
-    ax2.plot(zero_to_nan(prediction[1]), 'ko', markersize=3, alpha=0.7)
-    ax3.plot(zero_to_nan(prediction[2]), 'ko', markersize=3, alpha=0.7)
+    ax1.fill_between(x, 0, prediction[0],where=prediction[0]>0.5, label="мнение сети",facecolor='green',alpha=0.5 )
+    ax2.fill_between(x, 0, prediction[1], where=prediction[1]>0.5,label="мнение сети.",facecolor='green',alpha=0.5)
+    ax3.fill_between(x, 0, prediction[2],where=prediction[2]>0.5, label="мнение сети.",facecolor='green',alpha=0.5)
 
-    ax1.plot(zero_to_nan(right_answer[0]), 'm*')
-    ax2.plot(zero_to_nan(right_answer[1]), 'm*')
-    ax3.plot(zero_to_nan(right_answer[2]), 'm*')
+    ax1.plot(prediction[0], 'k-', label="сырой отв.")
+    ax2.plot(prediction[1], 'k-', label="сырой отв.")
+    ax3.plot(prediction[2], 'k-', label="сырой отв.")
+
+
+    ax1.fill_between(x,0,right_answer[0], alpha=0.5, label="правильн.отв.", facecolor='red')
+    ax2.fill_between(x,0,right_answer[1], alpha=0.5, label="правильн.отв.", facecolor='red')
+    ax3.fill_between(x,0,right_answer[2], alpha=0.5, label="правильн.отв.", facecolor='red')
+
+    plt.legend(loc=2)
     plt.savefig(figname)
 
 def test_model(model, batch, name):

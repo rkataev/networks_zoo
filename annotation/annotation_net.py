@@ -59,8 +59,8 @@ def train(name):
 
 
 
-def eval_models_in_folder():
-    _, generator_test = get_generators(train_batch=0, test_batch=1)
+def eval_models_in_folder(num_pictures):
+    _, generator_test = get_generators(train_batch=0, test_batch=num_pictures)
     batch = next(generator_test)
 
     folder = "./"
@@ -75,7 +75,7 @@ if __name__ == "__main__":
     name = "sofia_annotator"
 
     #train(name)
-    eval_models_in_folder()
+    eval_models_in_folder(3)
 
 
 
