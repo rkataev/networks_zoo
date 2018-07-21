@@ -1,7 +1,6 @@
 import numpy as np
 import os
-import skimage.io as io
-import skimage.transform as trans
+
 import numpy as np
 from keras.models import *
 from keras.layers import *
@@ -58,7 +57,7 @@ def unet(seg_len):
     conv9 = Conv1D(2, 3, activation='relu', padding='same', kernel_initializer='he_normal')(conv9)
     conv10 = Conv1D(3, 1, activation='sigmoid')(conv9)
 
-    model = Model(inputs=inputs, outputs=conv10)
+    model = Model(inputs=inputs, outputs=conv10, name="unet")
 
     model.compile(optimizer=Adam(lr=1e-4), loss='binary_crossentropy', metrics=['accuracy'])
 

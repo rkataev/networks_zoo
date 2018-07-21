@@ -3,12 +3,15 @@ import matplotlib.pyplot as plt
 import numpy as np
 import easygui
 import pickle as pkl
+from keras.models import load_model
+import os
 from caterpillar_feeder import annotated_generator
 from utils import open_pickle
 from sklearn.model_selection import train_test_split
 from annotation.model import unet
 from utils import save_history
 from annotation.trained_model_testing import test_model
+
 
 dataset_path = "./DSET_argentina.pkl"
 segment_len=512
@@ -53,13 +56,30 @@ def train(name):
     save_history(history, name)
     model.save(name + '.h5')
 
-def eval_model(model, test_gererator, name):
-    batch = next(test_gererator)
-    test_model(model, batch, name)
+
+
+
+def eval_models_in_folder():
+    _, generator_test = get_generators(train_batch=0, test_batch=1)
+    batch = next(generator_test)
+
+    folder = "./"
+    for file in os.listdir(folder):
+        filename = os.fsdecode(file)
+        if filename.endswith(".h5"):
+            model = load_model(os.path.join(folder,filename))
+            test_model(model, batch, name="test_seria_")
+
 
 if __name__ == "__main__":
     name = "sofia_annotator"
-    train(name)
+    #train(name)
+
+    from tensorflow.python.client import device_lib
+
+    print(device_lib.list_local_devices())
+
+
 
 
 
