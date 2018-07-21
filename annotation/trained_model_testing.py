@@ -32,13 +32,13 @@ def draw_prediction_and_reality(ecg_signal, prediction, right_answer, plot_name)
     ax2.plot(ecg_signal)
     ax3.plot(ecg_signal)
 
-    ax1.plot(zero_to_nan(prediction[0]))
-    ax2.plot(zero_to_nan(prediction[1]))
-    ax3.plot(zero_to_nan(prediction[2]))
+    ax1.plot(zero_to_nan(prediction[0]), 'ko', markersize=3, alpha=0.7)
+    ax2.plot(zero_to_nan(prediction[1]), 'ko', markersize=3, alpha=0.7)
+    ax3.plot(zero_to_nan(prediction[2]), 'ko', markersize=3, alpha=0.7)
 
-    ax1.plot(zero_to_nan(right_answer[0]))
-    ax2.plot(zero_to_nan(right_answer[1]))
-    ax3.plot(zero_to_nan(right_answer[2]))
+    ax1.plot(zero_to_nan(right_answer[0]), 'm*')
+    ax2.plot(zero_to_nan(right_answer[1]), 'm*')
+    ax3.plot(zero_to_nan(right_answer[2]), 'm*')
     plt.savefig(figname)
 
 def test_model(model, batch, name):
