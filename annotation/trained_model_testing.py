@@ -55,7 +55,7 @@ def test_model(model, batch, name):
     for i in range(len(predictions)):
         predicted = predictions[i]
         true_ans = batch[1][i]
-        signal_in_channel = batch[1][i][:,0] # i-тая кардиограмма, нулевое отведение
+        signal_in_channel = batch[0][i][:,0] # i-тая кардиограмма, нулевое отведение
 
         #для удобства рисования свопаем оси
         predicted = np.swapaxes(predicted, 0, 1)
