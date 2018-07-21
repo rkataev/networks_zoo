@@ -21,6 +21,10 @@ def draw_prediction_and_reality(ecg_signal, prediction, right_answer, plot_name)
     :return:
     """
     figname = plot_name + "_.png"
+    print("Рисуем:")
+    print(prediction.shape, " prediction.shape")
+    print(right_answer.shape, " right_answer.shape")
+    print(ecg_signal.shape, " ecg_signal.shape")
     assert len(prediction) == len(right_answer) == 3 #3 бинарные маски
 
     f, (ax1, ax2, ax3) = plt.subplots(1, 3, sharey=True, sharex=True)
@@ -28,13 +32,13 @@ def draw_prediction_and_reality(ecg_signal, prediction, right_answer, plot_name)
     ax2.plot(ecg_signal)
     ax3.plot(ecg_signal)
 
-    ax1.plot(zero_to_nan(prediction[0]),labels="predict")
-    ax2.plot(zero_to_nan(prediction[1]),labels="predict")
-    ax3.plot(zero_to_nan(prediction[2]),labels="predict")
+    ax1.plot(zero_to_nan(prediction[0]))
+    ax2.plot(zero_to_nan(prediction[1]))
+    ax3.plot(zero_to_nan(prediction[2]))
 
-    ax1.plot(zero_to_nan(right_answer[0]),labels="right")
-    ax2.plot(zero_to_nan(right_answer[1]),labels="right")
-    ax3.plot(zero_to_nan(right_answer[2]),labels="right")
+    ax1.plot(zero_to_nan(right_answer[0]))
+    ax2.plot(zero_to_nan(right_answer[1]))
+    ax3.plot(zero_to_nan(right_answer[2]))
     plt.savefig(figname)
 
 def test_model(model, batch, name):
@@ -45,14 +49,23 @@ def test_model(model, batch, name):
     :param name: имя для серии картинок
     :return:
     """
-    predictions = model.predict_on_batch(batch['x'])
+    print ("модель предсказывает на х с формой " + str(batch[0].shape))
+    predictions = model.predict_on_batch(batch[0])
+    print("предсказания (ann) имеют форму " + str(predictions.shape))
     for i in range(len(predictions)):
         predicted = predictions[i]
-        true_ans = batch['x'][i]
-        signal_in_channel = batch['ann'][i][0] # i-тая кардиограмма, нулевое отведение
+        true_ans = batch[1][i]
+        signal_in_channel = batch[1][i][:,0] # i-тая кардиограмма, нулевое отведение
+
+        #для удобства рисования свопаем оси
+        predicted = np.swapaxes(predicted, 0, 1)
+        true_ans = np.swapaxes(true_ans, 0, 1)
+
+
         draw_prediction_and_reality(ecg_signal=signal_in_channel,
                                     prediction=predicted,
-                                    right_answer=true_ans, plot_name=name+"_"+str(i))
+                                    right_answer=true_ans,
+                                    plot_name=name+"_"+str(i))
     print("картинки сохранены!")
 
 
