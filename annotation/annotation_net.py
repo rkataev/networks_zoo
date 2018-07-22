@@ -14,9 +14,11 @@ from annotation.model import unet
 from annotation.one_lead_one_mask import unet_simple
 from utils import save_history
 from annotation.trained_model_testing import test_model
+from annotation.dice_koef import (
+    dice_coef, dice_coef_loss
+)
 
-
-
+IS_SIMPLE= True
 dataset_path = "./DSET_argentina.pkl"
 segment_len=512
 
@@ -34,8 +36,6 @@ def get_generators(train_batch, test_batch, is_simple=False):
     :param test_batch: размер батча для тестового генератора
     :return:
     """
-
-
     dataset_in = open_pickle('./DSET_argentina.pkl')
     train_dset, test_dset = split_dict_annotations(dataset_in)
     my_generator_train = annotated_generator(segment_len, batch_size=train_batch, dataset_in=train_dset)
@@ -51,7 +51,7 @@ def get_model():
 
 def train(name):
     model = get_model()
-    generator_train, generator_test = get_generators(train_batch=15, test_batch=50,is_simple=True)
+    generator_train, generator_test = get_generators(train_batch=15, test_batch=50,is_simple=IS_SIMPLE)
     history = model.fit_generator(generator=generator_train,
                                   steps_per_epoch=40,
                                   epochs=10,
@@ -63,26 +63,22 @@ def train(name):
 
 
 def eval_models_in_folder(num_pictures):
-    _, generator_test = get_generators(train_batch=0, test_batch=num_pictures)
+    _, generator_test = get_generators(train_batch=0, test_batch=num_pictures, is_simple=IS_SIMPLE)
     batch = next(generator_test)
 
     folder = "./"
     for file in os.listdir(folder):
         filename = os.fsdecode(file)
         if filename.endswith(".h5"):
-            model = load_model(os.path.join(folder,filename))
-            test_model(model, batch, name="VIS_"+filename[0:-len(".h5")])
+            model = load_model(os.path.join(folder,filename),custom_objects={'dice_coef_loss': dice_coef_loss, 'dice_coef':dice_coef})
+            test_model(model, batch, name="VIS_"+filename[0:-len(".h5")], is_simple=IS_SIMPLE)
 
-def test_gen():
-    gen1, gen2 = get_generators(train_batch=2, test_batch=1)
-    sim = annotated_generator_simple(gen1)
-    next(sim)
 
 if __name__ == "__main__":
     name = "mila_annotator"
 
-    train(name)
-    #eval_models_in_folder(3)
+    #train(name)
+    eval_models_in_folder(3)
 
 
 

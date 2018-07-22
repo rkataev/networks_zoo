@@ -52,7 +52,7 @@ def draw_prediction_and_reality(ecg_signal, prediction, right_answer, plot_name)
     plt.legend(loc=2)
     plt.savefig(figname)
 
-def test_model(model, batch, name):
+def test_model(model, batch, name, is_simple):
     """
 
     :param model: бученная модель
@@ -66,19 +66,53 @@ def test_model(model, batch, name):
     for i in range(len(predictions)):
         predicted = predictions[i]
         true_ans = batch[1][i]
-        signal_in_channel = batch[0][i][:,0] # i-тая кардиограмма, нулевое отведение
+        if is_simple:
+            signal_in_channel = batch[0][i]
+        else:
+            signal_in_channel = batch[0][i][:,0] # i-тая кардиограмма, нулевое отведение
 
         #для удобства рисования свопаем оси
         predicted = np.swapaxes(predicted, 0, 1)
         true_ans = np.swapaxes(true_ans, 0, 1)
 
-
-        draw_prediction_and_reality(ecg_signal=signal_in_channel,
+        if is_simple:
+            draw_prediction_and_reality_simple(ecg_signal=signal_in_channel,
+                                        prediction=predicted,
+                                        right_answer=true_ans,
+                                        plot_name=name + "_" + str(i))
+        else:
+            draw_prediction_and_reality(ecg_signal=signal_in_channel,
                                     prediction=predicted,
                                     right_answer=true_ans,
                                     plot_name=name+"_"+str(i))
     print("картинки сохранены!")
 
+def draw_prediction_and_reality_simple(ecg_signal, prediction, right_answer, plot_name):
+    """
 
+    :param ecg_signal: сигнал некотего отведения
+    :param prediction: предсказаные 3 бинарные маски для этого отведения
+    :param right_answer: правильная маска этого отведения (тоже три штуки)
+    :param plot_name: имя картинки, куда хотим отрисовать это
+    :return:
+    """
+    figname = plot_name + "_.png"
+    print("Рисуем:")
+    print(prediction.shape, " prediction.shape")
+    print(right_answer.shape, " right_answer.shape")
+    print(ecg_signal.shape, " ecg_signal.shape")
+    assert len(prediction) == len(right_answer) == 1 #1 бинарня маски
+
+    f, (ax1, ax2) = plt.subplots(1, 2, sharey=False, sharex=False)
+    x = range(0, len(ecg_signal))
+
+    ax1.fill_between(x, 0, prediction[0],where=prediction[0]>0.5, label="мнение сети",facecolor='green',alpha=0.5 )
+    ax1.plot(prediction[0], 'k-', label="сырой отв.")
+    ax1.fill_between(x,0,right_answer[0], alpha=0.5, label="правильн.отв.", facecolor='red')
+
+    ax2.plot(ecg_signal, 'm-', label="ЭКГ")
+
+    plt.legend(loc=2)
+    plt.savefig(figname)
 
 

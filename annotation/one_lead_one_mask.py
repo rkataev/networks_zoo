@@ -8,8 +8,10 @@ from keras.optimizers import *
 from keras.callbacks import ModelCheckpoint, LearningRateScheduler
 from keras import backend as keras
 
-
-# (None, 512, 12) -----> (None, 512, 3)
+from annotation.dice_koef import (
+    dice_coef, dice_coef_loss
+)
+# (None, 512, 1) -----> (None, 512, 1)
 def unet_simple(seg_len):
     input_size = (seg_len, 1)
     inputs = Input(input_size)
@@ -59,7 +61,7 @@ def unet_simple(seg_len):
 
     model = Model(inputs=inputs, outputs=conv10, name="unet")
 
-    model.compile(optimizer=Adam(lr=1e-4), loss='binary_crossentropy', metrics=['accuracy'])
+    model.compile(optimizer=Adam(lr=1e-4), loss=dice_coef_loss, metrics=[dice_coef])
 
     model.summary()
     return model
