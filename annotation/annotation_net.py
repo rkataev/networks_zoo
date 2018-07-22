@@ -5,12 +5,15 @@ import easygui
 import pickle as pkl
 from keras.models import load_model
 import os
-from caterpillar_feeder import annotated_generator
+from caterpillar_feeder import (
+    annotated_generator, annotated_generator_simple
+)
 from utils import open_pickle
 from sklearn.model_selection import train_test_split
 from annotation.model import unet
 from utils import save_history
 from annotation.trained_model_testing import test_model
+
 
 
 dataset_path = "./DSET_argentina.pkl"
@@ -49,7 +52,7 @@ def train(name):
     generator_train, generator_test = get_generators(train_batch=15, test_batch=50)
     history = model.fit_generator(generator=generator_train,
                                   steps_per_epoch=40,
-                                  epochs=10,
+                                  epochs=30,
                                   validation_data=generator_test,
                                   validation_steps=1)
 
@@ -70,12 +73,18 @@ def eval_models_in_folder(num_pictures):
             model = load_model(os.path.join(folder,filename))
             test_model(model, batch, name="VIS_"+filename[0:-len(".h5")])
 
+def test_gen():
+    gen1, gen2 = get_generators(train_batch=2, test_batch=1)
+    sim = annotated_generator_simple(gen1)
+    next(sim)
 
 if __name__ == "__main__":
     name = "sofia_annotator"
 
     #train(name)
-    eval_models_in_folder(3)
+    #eval_models_in_folder(3)
+
+    test_gen()
 
 
 
