@@ -10,7 +10,7 @@ from keras import backend as keras
 
 
 # (None, 512, 12) -----> (None, 512, 3)
-def unet(seg_len):
+def unet_simple(seg_len):
     input_size = (seg_len, 1)
     inputs = Input(input_size)
     conv1 = Conv1D(64, 3, activation='relu', padding='same', kernel_initializer='he_normal')(inputs)
@@ -65,4 +65,4 @@ def unet(seg_len):
     return model
 
 if __name__ == "__main__":
-    unet(seg_len=1024)
+    unet_simple(seg_len=1024)
