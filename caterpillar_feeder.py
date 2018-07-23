@@ -95,6 +95,13 @@ def annotated_generator(segment_len, batch_size, dataset_in=None):
         print(batch_ann.shape)
         yield (batch_x, batch_ann)
 
+def annotated_generator_simple(genrator_annotated):
+    while True:
+        (batch_x, batch_ann) = next(genrator_annotated)
+        batch_x=batch_x[:,:,0:1]
+        batch_ann=batch_ann[:,:,0:1]
+        yield (batch_x, batch_ann)
+
 def TEST_generator_for_ae():
     segment_len = 3
     batch_size = 1
