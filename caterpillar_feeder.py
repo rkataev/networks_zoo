@@ -2,6 +2,8 @@ import numpy as np
 from dataset_getter import prepare_data
 import pprint
 from utils import open_pickle
+import matplotlib.pyplot as plt
+import BaselineWanderRemoval as bwr
 
 def ecg_batches_generator(segment_len, batch_size, ecg_dataset):
     """
@@ -73,7 +75,7 @@ def annotated_generator(segment_len, batch_size, dataset_in=None):
         ecg_annotations = np.array(dataset_in['ann'])
     
     #отступ от начала и конца
-    offset = 700
+    offset = 0
 
     ecg_dataset = np.swapaxes(ecg_dataset, 1, 2)
     ecg_annotations = np.swapaxes(ecg_annotations, 1, 2)
@@ -126,12 +128,38 @@ def TEST_generator_for_classifier():
     pprint.pprint(batch_xy[1])
 
 def TEST_generator_for_annotator():
-    segment_len = 10
+    segment_len = 4500
     batch_size = 2
-    dataset_in = open_pickle('./DSET_argentina.pkl')
+    dataset_in = open_pickle('./datasets/DSET_argentina.pkl')
     my_generator = annotated_generator(segment_len, batch_size, dataset_in)
 
     batch_xy = next(my_generator)
+
+    ecg_extract = np.array(batch_xy[0])
+
+    print(ecg_extract)
+    print(ecg_extract.shape)
+    #ecg_extract = np.swapaxes(ecg_extract, 0, 1)
+    ecg_extract = ecg_extract[0:1, :, 0:1]
+    ecg_extract = np.squeeze(ecg_extract, 0)
+    ecg_extract = np.squeeze(ecg_extract, 1)
+    
+    print(ecg_extract)
+    print(ecg_extract.shape)
+
+    #smooth = baseline_als(ecg_extract, 0.05, 10e9, niter=10)
+
+    smooth = bwr.fix_baseline_wander(ecg_extract, 500)
+
+    plt.subplot(2,1,1)
+    plt.axhline(0, color = "red")
+    plt.plot(ecg_extract, 'b-')
+    
+    plt.subplot(2,1,2)
+    plt.axhline(0, color = "red")
+    plt.plot(smooth, 'b-')
+    plt.show()
+
     print("батч имеет форму: \\n 1.shape=" + str(batch_xy[0].shape))
     print("2.shape=" + str(batch_xy[1].shape))
     pprint.pprint(batch_xy[1])
