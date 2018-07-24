@@ -8,7 +8,7 @@ SHRINK_FACTOR = 2
 
 def shrink_dataset(dataset_in):
     """
-
+    выкидывает каждый пиксель с шагом SHRINK_FACTOR (из экг-шки и из маск)
     :param dataset_in: датасет для разрезания, представляет собой мапу с 2 ключами- 'х' и 'ann'
     :return:
     """
@@ -68,12 +68,41 @@ def extract_first_lines(dataset_in):
     :return: датасет, представляет собой мапу с 2 ключами- 'х' и 'ann'
     """
     x = dataset_in['x'][:,0:1,:]
-    ann = dataset_in['ann'][:,0:1,:]
+    ann = dataset_in['ann'][:,2:3,:]
     return {'x':x, 'ann':ann}
 
 
 def get_enhansed_generator(segment_len, batch_size, dataset_in):
+    """
+    генератор данных для аннотатора, внутри него произведена вся необходимая предобраотка экг/аннотиаций
+    :param segment_len:
+    :param batch_size:
+    :param dataset_in: датасет, представляет собой мапу с 2 ключами- 'х' и 'ann'
+    :return:
+    """
     dataset_only_one_channel = extract_first_lines(dataset_in)
+    dataset_shrinked = shrink_dataset(dataset_only_one_channel)
+    my_generator = annotated_generator(segment_len=segment_len, batch_size=batch_size, dataset_in=dataset_shrinked)
+    return my_generator
+
+def extract_first_leads(dataset_in):
+    """
+    из каждой записи входного датасета берет первое отведение
+    :param dataset_in: датасет, представляет собой мапу с 2 ключами- 'х' и 'ann'
+    :return: датасет, представляет собой мапу с 2 ключами- 'х' и 'ann'
+    """
+    x = dataset_in['x'][:,0:1,:]
+    return {'x':x, 'ann':dataset_in['ann']}
+
+def get_mulimask_generator(segment_len, batch_size, dataset_in):
+    """
+    генератор данных для аннотатора, внутри него произведена вся необходимая предобраотка экг/аннотиаций
+    :param segment_len:
+    :param batch_size:
+    :param dataset_in: датасет, представляет собой мапу с 2 ключами- 'х' и 'ann'
+    :return:
+    """
+    dataset_only_one_channel = extract_first_leads(dataset_in)
     dataset_shrinked = shrink_dataset(dataset_only_one_channel)
     my_generator = annotated_generator(segment_len=segment_len, batch_size=batch_size, dataset_in=dataset_shrinked)
     return my_generator
@@ -104,4 +133,4 @@ def draw_shrinked():
 if __name__ == "__main__":
     #TEST_all()
     draw_shrinked()
-    #test = [[22,22,22,22],[3,3,3,3],]
+
