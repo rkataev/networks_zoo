@@ -3,6 +3,7 @@ from dataset_getter import prepare_data
 import pprint
 from utils import open_pickle
 import matplotlib.pyplot as plt
+import BaselineWanderRemoval as bwr
 
 SHRINK_FACTOR = 2
 
@@ -74,19 +75,25 @@ def extract_first_lines(dataset_in):
 
 def get_enhansed_generator(segment_len, batch_size, dataset_in):
     dataset_only_one_channel = extract_first_lines(dataset_in)
+    print("One channel shape: " + str(dataset_only_one_channel['x'].shape))
+
+    for i in range(0, dataset_only_one_channel['x'].shape[0]):
+        print("Now smoothing: " + str(i))
+        dataset_only_one_channel['x'][i, 0, :] = bwr.fix_baseline_wander(dataset_only_one_channel['x'][i, 0, :], 500)
+
     dataset_shrinked = shrink_dataset(dataset_only_one_channel)
     my_generator = annotated_generator(segment_len=segment_len, batch_size=batch_size, dataset_in=dataset_shrinked)
     return my_generator
 
 def TEST_all():
-    dataset_in = open_pickle('./DSET_argentina.pkl')
+    dataset_in = open_pickle('../datasets/DSET_argentina.pkl')
     my_generator = get_enhansed_generator(segment_len=512, batch_size=20, dataset_in=dataset_in)
     batch = next(my_generator)
     print ("shape of batch x= " + str(batch[0].shape))
     print("shape of batch y= " + str(batch[1].shape))
 
 def draw_shrinked():
-    dataset_in = open_pickle('./DSET_argentina.pkl')
+    dataset_in = open_pickle('../datasets/DSET_argentina.pkl')
     dataset_only_one_channel = extract_first_lines(dataset_in)
     dset_shrinked = shrink_dataset(dataset_only_one_channel)
     before_x = dataset_only_one_channel['x'][0,0,0:30]
@@ -102,6 +109,6 @@ def draw_shrinked():
 
 
 if __name__ == "__main__":
-    #TEST_all()
+    TEST_all()
     draw_shrinked()
     #test = [[22,22,22,22],[3,3,3,3],]
