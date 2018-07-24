@@ -52,7 +52,7 @@ def draw_prediction_and_reality(ecg_signal, prediction, right_answer, plot_name)
     plt.legend(loc=2)
     plt.savefig(figname)
 
-def test_model(model, batch, name, is_simple):
+def test_model(model, batch, name):
     """
 
     :param model: бученная модель
@@ -66,25 +66,19 @@ def test_model(model, batch, name, is_simple):
     for i in range(len(predictions)):
         predicted = predictions[i]
         true_ans = batch[1][i]
-        if is_simple:
-            signal_in_channel = batch[0][i]
-        else:
-            signal_in_channel = batch[0][i][:,0] # i-тая кардиограмма, нулевое отведение
+
+        signal_in_channel = batch[0][i]
+
+        #signal_in_channel = batch[0][i][:,0] # i-тая кардиограмма, нулевое отведение
 
         #для удобства рисования свопаем оси
         predicted = np.swapaxes(predicted, 0, 1)
         true_ans = np.swapaxes(true_ans, 0, 1)
 
-        if is_simple:
-            draw_prediction_and_reality_simple(ecg_signal=signal_in_channel,
+        draw_prediction_and_reality_simple(ecg_signal=signal_in_channel,
                                         prediction=predicted,
                                         right_answer=true_ans,
                                         plot_name=name + "_" + str(i))
-        else:
-            draw_prediction_and_reality(ecg_signal=signal_in_channel,
-                                    prediction=predicted,
-                                    right_answer=true_ans,
-                                    plot_name=name+"_"+str(i))
     print("картинки сохранены!")
 
 def draw_prediction_and_reality_simple(ecg_signal, prediction, right_answer, plot_name):
