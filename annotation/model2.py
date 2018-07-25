@@ -6,7 +6,7 @@ from keras.models import *
 from keras.layers import *
 from keras.optimizers import *
 from keras.callbacks import ModelCheckpoint, LearningRateScheduler
-from keras import backend as keras
+from keras import backend as K
 
 from annotation.dice_koef import (
     dice_coef, dice_coef_loss, dice_coef_multilabel_quad

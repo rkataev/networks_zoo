@@ -97,16 +97,26 @@ def test_model_multimask(model, batch, name):
         print (len(ann[i]), "len ann i")
         print(ann[i].shape, "sh ann i")
         plot_name = "VIS" + name + "_" + str(i) + ".png"
-        f, (ax1, ax2, ax3, ax4) = plt.subplots(1, 4, sharey=False, sharex=False)
+        #f, (ax1, ax2, ax3, ax4) = plt.subplots(1, 4, sharey=False, sharex=False)
+
+        gridsize = (2, 3)
+        fig = plt.figure(figsize=(8, 5))
+        ax1 = plt.subplot2grid(gridsize, (0, 0), colspan=2, rowspan=1)
+        ax2 = plt.subplot2grid(gridsize, (1, 0), rowspan=1)
+        ax3 = plt.subplot2grid(gridsize, (1, 1), rowspan=1)
+        ax4 = plt.subplot2grid(gridsize, (1, 2), rowspan=1)
+
+
         ax1.plot(x[i], 'k-', label="ЭКГ", alpha=0.6)
 
         ax1.fill_between(t, 0, 10, alpha=0.6, where=ann[i,:,0] > 0.6, label="правильн.отв.0", facecolor='red')
         ax1.fill_between(t, 0, 10, alpha=0.6, where=ann[i, :, 1] > 0.6, label="правильн.отв.1", facecolor='green')
         ax1.fill_between(t, 0, 10, alpha=0.6, where=ann[i, :, 2] > 0.6, label="правильн.отв.2", facecolor='blue')
 
+        d = 5
         ax1.fill_between(t, 11, 21, alpha=0.5, where=predictions[i,:,0] > 0.5, facecolor='red')
-        ax1.fill_between(t, 11, 21, alpha=0.5, where=predictions[i,:,1] > 0.5, facecolor='green')
-        ax1.fill_between(t, 11, 21, alpha=0.5, where=predictions[i,:,2] > 0.5, facecolor='blue')
+        ax1.fill_between(t, 11+d, 21+d, alpha=0.5, where=predictions[i,:,1] > 0.5, facecolor='green')
+        ax1.fill_between(t, 11+2*d, 21+2*d, alpha=0.5, where=predictions[i,:,2] > 0.5, facecolor='blue')
 
         ax2.set_ylim([0, 1.1])
         ax2.plot(predictions[i, :, 0],'k-',  alpha=0.6)
@@ -127,7 +137,7 @@ def test_model_multimask(model, batch, name):
     print("картинки сохранены!")
 
 if __name__ == "__main__":
-    name = "miriam_annotator"
+    name = "gavriil_annotator"
 
     train(name)
     eval_models_in_folder(10)
