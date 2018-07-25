@@ -1,7 +1,7 @@
 import numpy as np
 from dataset_getter import prepare_data
 import pprint
-from utils import open_pickle
+from utils import open_pickle, get_addon_mask
 import matplotlib.pyplot as plt
 import BaselineWanderRemoval as bwr
 
@@ -61,6 +61,48 @@ def annotated_generator(segment_len, batch_size, dataset_in):
         print(batch_ann.shape)
         yield (batch_x, batch_ann)
 
+def annotated_generator_with_addon(segment_len, batch_size, dataset_in):
+    """
+    батч-генератор для ЭКГ с аннотациями + дополнительная маска
+    :param segment_len: длина (в тактах) кусков экг, которые будем вырезать
+    :param batch_size: длина батча, возвращаемого ф-цией
+    :param ecg_dataset: датасет для разрезания, представляет собой мапу с 2 ключами- 'х' и 'ann'
+    """
+
+    ecg_dataset = np.array(dataset_in['x'])
+    ecg_annotations = np.array(dataset_in['ann'])
+
+    # отступ от начала и конца
+    offset = 700
+
+    ecg_dataset = np.swapaxes(ecg_dataset, 1, 2)
+    ecg_annotations = np.swapaxes(ecg_annotations, 1, 2)
+
+    starting_position = np.random.randint(offset, ecg_dataset.shape[1] - segment_len - offset)
+    ending_position = starting_position + segment_len
+    ecg_rand = np.random.randint(0, ecg_dataset.shape[0])
+    while True:
+        batch_x = ecg_dataset[ecg_rand: ecg_rand +1, starting_position:ending_position, :]
+        batch_ann = np.array([ecg_annotations[ecg_rand, starting_position:ending_position, :]])
+        
+        addition = get_addon_mask(ecg_annotations[ecg_rand:ecg_rand + 1, starting_position:ending_position, :])
+        batch_ann = np.concatenate((batch_ann, addition), 2)
+
+        for i in range(0, batch_size- 1):
+            starting_position = np.random.randint(offset, ecg_dataset.shape[1] - segment_len - offset)
+            ending_position = starting_position + segment_len
+            ecg_rand = np.random.randint(0, ecg_dataset.shape[0])            
+            batch_x = np.concatenate(
+                (batch_x, ecg_dataset[ecg_rand:ecg_rand + 1, starting_position:ending_position, :]), 0)
+            
+            mask = get_addon_mask(ecg_annotations[ecg_rand:ecg_rand+1, starting_position:ending_position, :])
+            addition = np.concatenate((ecg_annotations[ecg_rand:ecg_rand + 1, starting_position:ending_position, :], mask), 2)
+            batch_ann = np.concatenate((batch_ann, addition), 0)
+
+        batch_ann = np.swapaxes(batch_ann, 1, 2)
+        print(batch_x.shape)
+        print(batch_ann.shape)
+        yield (batch_x, batch_ann)
 
 def extract_first_lines(dataset_in):
     """
@@ -112,6 +154,19 @@ def get_mulimask_generator(segment_len, batch_size, dataset_in):
     dataset_only_one_channel = extract_first_leads(dataset_in)
     dataset_shrinked = shrink_dataset(dataset_only_one_channel)
     my_generator = annotated_generator(segment_len=segment_len, batch_size=batch_size, dataset_in=dataset_shrinked)
+    return my_generator
+
+def get_mulimask_generator_addon(segment_len, batch_size, dataset_in):
+    """
+    генератор данных для аннотатора, внутри него произведена вся необходимая предобраотка экг/аннотиаций + доп. маска
+    :param segment_len:
+    :param batch_size:
+    :param dataset_in: датасет, представляет собой мапу с 2 ключами- 'х' и 'ann'
+    :return:
+    """
+    dataset_only_one_channel = extract_first_leads(dataset_in)
+    dataset_shrinked = shrink_dataset(dataset_only_one_channel)
+    my_generator = annotated_generator_with_addon(segment_len=segment_len, batch_size=batch_size, dataset_in=dataset_shrinked)
     return my_generator
 
 def TEST_all():
