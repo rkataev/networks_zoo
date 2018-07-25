@@ -76,10 +76,10 @@ def eval_models_in_folder(num_pictures):
 
 
 if __name__ == "__main__":
-    name = "simona_annotator"
+    name = "apolon_annotator"
 
     train(name)
-    eval_models_in_folder(3)
+    eval_models_in_folder(40)
 
 
 

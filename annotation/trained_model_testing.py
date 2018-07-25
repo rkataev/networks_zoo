@@ -105,8 +105,10 @@ def draw_prediction_and_reality_simple(ecg_signal, prediction, right_answer, plo
     ax1.fill_between(x,0,right_answer[0], alpha=0.5, label="правильн.отв.", facecolor='red')
 
     ax2.plot(ecg_signal, 'm-', label="ЭКГ")
+    ax2.fill_between(x, 0, 10, alpha=0.5, where=right_answer[0]>0.6, label="правильн.отв.", facecolor='red')
 
     plt.legend(loc=2)
     plt.savefig(figname)
+
 
 
