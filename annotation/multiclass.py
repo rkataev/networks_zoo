@@ -14,7 +14,7 @@ from annotation.model2 import unet_yana
 from annotation.one_lead_one_mask import unet_simple
 from utils import save_history
 from annotation.dice_koef import (
-    dice_coef, dice_coef_loss
+    dice_coef, dice_coef_loss, get_custom_objects
 )
 dataset_path = "./DSET_argentina.pkl"
 segment_len=512
@@ -70,7 +70,7 @@ def eval_models_in_folder(num_pictures):
     for file in os.listdir(folder):
         filename = os.fsdecode(file)
         if filename.endswith(".h5"):
-            model = load_model(os.path.join(folder,filename),custom_objects={'dice_coef_loss': dice_coef_loss, 'dice_coef':dice_coef})
+            model = load_model(os.path.join(folder,filename),custom_objects=get_custom_objects())
             test_model_multimask(model, batch, name="VIS_"+filename[0:-len(".h5")])
 
 
@@ -109,16 +109,16 @@ def test_model_multimask(model, batch, name):
         ax1.fill_between(t, 11, 21, alpha=0.5, where=predictions[i,:,2] > 0.5, facecolor='blue')
 
         ax2.set_ylim([0, 1.1])
-        ax2.plot(predictions[i, :, 0], alpha=0.6, color='red')
+        ax2.plot(predictions[i, :, 0],'k-',  alpha=0.6)
         ax2.fill_between(t, 0, 1, alpha=0.6, where=ann[i, :, 0] > 0.6, label="правильн.отв.0", facecolor='red')
 
         ax3.set_ylim([0, 1.1])
         ax3.fill_between(t, 0, 1, alpha=0.6, where=ann[i, :, 1] > 0.6, label="правильн.отв.1", facecolor='green')
-        ax3.plot(predictions[i, :, 1], alpha=0.6, color='green')
+        ax3.plot(predictions[i, :, 1],'k-', alpha=0.6)
 
         ax4.set_ylim([0, 1.1])
         ax4.fill_between(t, 0, 1, alpha=0.6, where=ann[i, :, 2] > 0.6, label="правильн.отв.2", facecolor='blue')
-        ax4.plot(predictions[i, :, 2], alpha=0.6, color='blue')
+        ax4.plot(predictions[i, :, 2], 'k-', alpha=0.6)
         plt.legend(loc=2)
         plt.savefig(plot_name)
         plt.clf()
@@ -127,10 +127,10 @@ def test_model_multimask(model, batch, name):
     print("картинки сохранены!")
 
 if __name__ == "__main__":
-    name = "maria_annotator"
+    name = "miriam_annotator"
 
-    #train(name)
-    eval_models_in_folder(4)
+    train(name)
+    eval_models_in_folder(10)
 
 
 
