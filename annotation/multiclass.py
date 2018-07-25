@@ -10,7 +10,7 @@ from annotation.ann_generator import (
 )
 from utils import open_pickle
 from sklearn.model_selection import train_test_split
-from annotation.model import unet
+from annotation.model2 import unet_yana
 from annotation.one_lead_one_mask import unet_simple
 from utils import save_history
 from annotation.dice_koef import (
@@ -42,7 +42,7 @@ def get_generators(train_batch, test_batch):
 
 def get_model():
     #return unet(seg_len=segment_len)
-    return unet_simple33(seg_len=segment_len)
+    return unet_yana(seg_len=segment_len)
 
 
 def train(name):
@@ -87,38 +87,41 @@ def test_model_multimask(model, batch, name):
     print("модель предсказывает на х с формой " + str(x.shape))
     predictions = model.predict_on_batch(x)
     print("предсказания (ann) имеют форму " + str(predictions.shape))
-    for i in range(len(predictions)):
-        predicted = predictions[i]
-        true_ans = ann[i]
-        signal_in_channel = x[i]
+    print ("кол-во предсказаний = " + str(len(predictions)))
+    print("кол-во экг-шек = " + str(len(x)))
 
-        # для удобства рисования свопаем оси
-        predicted = np.swapaxes(predicted, 0, 1)
-        true_ans = np.swapaxes(true_ans, 0, 1)
+    t = range(0, len(x[0]))
+    for i in range(len(x)):
+        print("bo!")
+        print (len(x[i]))
+        print (len(ann[i]), "len ann i")
+        print(ann[i].shape, "sh ann i")
         plot_name = "VIS" + name + "_" + str(i) + ".png"
-
         f, (ax1, ax2) = plt.subplots(1, 2, sharey=False, sharex=False)
-        x = range(0, len(signal_in_channel))
+        ax1.plot(x[i], 'k-', label="ЭКГ", alpha=0.6)
 
-        ax1.plot(predicted[0], 'r-', label="сырой отв.0")
-        ax1.plot(predicted[1], 'y-', label="сырой отв.1")
-        ax1.plot(predicted[2], 'b-', label="сырой отв.2")
+        ax1.fill_between(t, 0, 10, alpha=0.6, where=ann[i,:,0] > 0.6, label="правильн.отв.0", facecolor='red')
+        ax1.fill_between(t, 0, 10, alpha=0.6, where=ann[i, :, 1] > 0.6, label="правильн.отв.1", facecolor='green')
+        ax1.fill_between(t, 0, 10, alpha=0.6, where=ann[i, :, 2] > 0.6, label="правильн.отв.2", facecolor='blue')
 
-        ax2.plot(predicted, 'm-', label="ЭКГ")
-        ax2.fill_between(x, 0, 10, alpha=0.5, where=true_ans[0] > 0.6, label="правильн.отв.", facecolor='red')
-        ax2.fill_between(x, 0, 10, alpha=0.5, where=true_ans[1] > 0.6, label="правильн.отв.", facecolor='yellow')
-        ax2.fill_between(x, 0, 10, alpha=0.5, where=true_ans[2] > 0.6, label="правильн.отв.", facecolor='blue')
+        ax1.fill_between(t, 11, 21, alpha=0.5, where=predictions[i,:,0] > 0.5, facecolor='red')
+        ax1.fill_between(t, 11, 21, alpha=0.5, where=predictions[i,:,1] > 0.5, facecolor='green')
+        ax1.fill_between(t, 11, 21, alpha=0.5, where=predictions[i,:,2] > 0.5, facecolor='blue')
+
+
 
         plt.legend(loc=2)
         plt.savefig(plot_name)
+        plt.clf()
+
 
     print("картинки сохранены!")
 
 if __name__ == "__main__":
     name = "maria_annotator"
 
-    train(name)
-    eval_models_in_folder(40)
+    #train(name)
+    eval_models_in_folder(4)
 
 
 

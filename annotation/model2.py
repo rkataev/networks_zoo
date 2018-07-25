@@ -12,7 +12,7 @@ from annotation.dice_koef import (
     dice_coef, dice_coef_loss
 )
 # (None, 512, 1) -----> (None, 512, 1)
-def unet_simple(seg_len):
+def unet_yana(seg_len):
     input_size = (seg_len, 1)
     inputs = Input(input_size)
     conv1 = Conv1D(64, 3, activation='relu', padding='same', kernel_initializer='he_normal')(inputs)
@@ -57,14 +57,14 @@ def unet_simple(seg_len):
     conv9 = Conv1D(64, 3, activation='relu', padding='same', kernel_initializer='he_normal')(merge9)
     conv9 = Conv1D(64, 3, activation='relu', padding='same', kernel_initializer='he_normal')(conv9)
     conv9 = Conv1D(2, 3, activation='relu', padding='same', kernel_initializer='he_normal')(conv9)
-    conv10 = Conv1D(1, 1, activation='sigmoid')(conv9)
+    conv10 = Conv1D(3, 1, activation='sigmoid')(conv9)
 
     model = Model(inputs=inputs, outputs=conv10, name="unet")
 
-    model.compile(optimizer=Adam(lr=1e-4), loss='binary_crossentropy', metrics=[dice_coef])
+    model.compile(optimizer=Adam(lr=1e-4), loss=dice_coef_loss, metrics=[dice_coef])
 
     model.summary()
     return model
 
 if __name__ == "__main__":
-    unet_simple(seg_len=1024)
+    unet_yana(seg_len=512)
