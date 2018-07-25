@@ -108,15 +108,16 @@ def test_model_multimask(model, batch, name):
 
 
         ax1.plot(x[i], 'k-', label="ЭКГ", alpha=0.6)
-
+        y_base = 12
+        ax1.axhline(y=y_base, linestyle='--', color='m')
         ax1.fill_between(t, 0, 10, alpha=0.6, where=ann[i,:,0] > 0.6, label="правильн.отв.0", facecolor='red')
         ax1.fill_between(t, 0, 10, alpha=0.6, where=ann[i, :, 1] > 0.6, label="правильн.отв.1", facecolor='green')
         ax1.fill_between(t, 0, 10, alpha=0.6, where=ann[i, :, 2] > 0.6, label="правильн.отв.2", facecolor='blue')
 
-        d = 5
-        ax1.fill_between(t, 11, 21, alpha=0.5, where=predictions[i,:,0] > 0.5, facecolor='red')
-        ax1.fill_between(t, 11+d, 21+d, alpha=0.5, where=predictions[i,:,1] > 0.5, facecolor='green')
-        ax1.fill_between(t, 11+2*d, 21+2*d, alpha=0.5, where=predictions[i,:,2] > 0.5, facecolor='blue')
+        d = 4
+        ax1.fill_between(t, y_base, y_base+10, alpha=0.5, where=predictions[i,:,0] > 0.5, facecolor='red')
+        ax1.fill_between(t, y_base+d, y_base + 10+d, alpha=0.5, where=predictions[i,:,1] > 0.5, facecolor='green')
+        ax1.fill_between(t, y_base+2*d, y_base + 10+2*d, alpha=0.5, where=predictions[i,:,2] > 0.5, facecolor='blue')
 
         ax2.set_ylim([0, 1.1])
         ax2.plot(predictions[i, :, 0],'k-',  alpha=0.6)
@@ -139,7 +140,7 @@ def test_model_multimask(model, batch, name):
 if __name__ == "__main__":
     name = "gavriil_annotator"
 
-    train(name)
+    #train(name)
     eval_models_in_folder(10)
 
 
