@@ -97,7 +97,7 @@ def test_model_multimask(model, batch, name):
         print (len(ann[i]), "len ann i")
         print(ann[i].shape, "sh ann i")
         plot_name = "VIS" + name + "_" + str(i) + ".png"
-        f, (ax1, ax2) = plt.subplots(1, 2, sharey=False, sharex=False)
+        f, (ax1, ax2, ax3, ax4) = plt.subplots(1, 4, sharey=False, sharex=False)
         ax1.plot(x[i], 'k-', label="ЭКГ", alpha=0.6)
 
         ax1.fill_between(t, 0, 10, alpha=0.6, where=ann[i,:,0] > 0.6, label="правильн.отв.0", facecolor='red')
@@ -108,8 +108,17 @@ def test_model_multimask(model, batch, name):
         ax1.fill_between(t, 11, 21, alpha=0.5, where=predictions[i,:,1] > 0.5, facecolor='green')
         ax1.fill_between(t, 11, 21, alpha=0.5, where=predictions[i,:,2] > 0.5, facecolor='blue')
 
+        ax2.set_ylim([0, 1.1])
+        ax2.plot(predictions[i, :, 0], alpha=0.6, color='red')
+        ax2.fill_between(t, 0, 1, alpha=0.6, where=ann[i, :, 0] > 0.6, label="правильн.отв.0", facecolor='red')
 
+        ax3.set_ylim([0, 1.1])
+        ax3.fill_between(t, 0, 1, alpha=0.6, where=ann[i, :, 1] > 0.6, label="правильн.отв.1", facecolor='green')
+        ax3.plot(predictions[i, :, 1], alpha=0.6, color='green')
 
+        ax4.set_ylim([0, 1.1])
+        ax4.fill_between(t, 0, 1, alpha=0.6, where=ann[i, :, 2] > 0.6, label="правильн.отв.2", facecolor='blue')
+        ax4.plot(predictions[i, :, 2], alpha=0.6, color='blue')
         plt.legend(loc=2)
         plt.savefig(plot_name)
         plt.clf()
