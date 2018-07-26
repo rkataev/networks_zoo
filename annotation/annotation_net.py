@@ -76,7 +76,7 @@ def eval_models_in_folder(num_pictures):
 
 
 if __name__ == "__main__":
-    name = "apolon_annotator"
+    name = "venera_annotator"
 
     train(name)
     eval_models_in_folder(40)

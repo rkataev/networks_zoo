@@ -11,6 +11,7 @@ from annotation.ann_generator import (
 from utils import open_pickle
 from sklearn.model_selection import train_test_split
 from annotation.model2 import unet_yana
+from annotation.model_yana import unet_trihead
 from annotation.one_lead_one_mask import unet_simple
 from utils import save_history
 from annotation.dice_koef import (
@@ -42,7 +43,8 @@ def get_generators(train_batch, test_batch):
 
 def get_model():
     #return unet(seg_len=segment_len)
-    return unet_yana(seg_len=segment_len)
+    #return unet_yana(seg_len=segment_len)
+    return unet_trihead(seg_len=segment_len)
 
 
 def train(name):
@@ -138,10 +140,10 @@ def test_model_multimask(model, batch, name):
     print("картинки сохранены!")
 
 if __name__ == "__main__":
-    name = "gavriil_annotator"
+    name = "oximiron_annotator"
 
-    #train(name)
-    eval_models_in_folder(10)
+    train(name)
+    eval_models_in_folder(15)
 
 
 
