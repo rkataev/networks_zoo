@@ -1,23 +1,20 @@
 # -*- coding: utf-8 -*
-import matplotlib.pyplot as plt
-import numpy as np
-import easygui
-import pickle as pkl
-from keras.models import load_model
 import os
+
+import matplotlib.pyplot as plt
+from keras.models import load_model
+from sklearn.model_selection import train_test_split
+
 from annotation.ann_generator import (
     get_mulimask_generator, get_mulimask_generator_addon
 )
-from utils import open_pickle
-from sklearn.model_selection import train_test_split
-from annotation.model2 import unet_yana
-from annotation.model_yana import unet_trihead
-from annotation.one_lead_one_mask import unet_simple
-from annotation.model_gnoyniy import unet_trihead_permute
-from utils import save_history
 from annotation.dice_koef import (
-    dice_coef, dice_coef_loss, get_custom_objects
+    get_custom_objects
 )
+from annotation.models.model_yana import unet_trihead
+from utils import open_pickle
+from utils import save_history
+
 dataset_path = "./DSET_argentina.pkl"
 segment_len=512
 
@@ -66,7 +63,7 @@ def train(name, need_permute=False):
         generator_train, generator_test = get_generators(train_batch=15, test_batch=50)
     history = model.fit_generator(generator=generator_train,
                                   steps_per_epoch=40,
-                                  epochs=10,
+                                  epochs=45,
                                   validation_data=generator_test,
                                   validation_steps=1)
 
@@ -133,9 +130,9 @@ def test_model_multimask(model, batch, name):
         ax1.fill_between(t, 0, 10, alpha=0.6, where=ann[i, :, 2] > 0.6, label="правильн.отв.2", facecolor='blue')
 
         d = 4
-        ax1.fill_between(t, y_base, y_base+10, alpha=0.5, where=predictions[i,:,0] > 0.6, facecolor='red')
-        ax1.fill_between(t, y_base+d, y_base + 10+d, alpha=0.5, where=predictions[i,:,1] > 0.6, facecolor='green')
-        ax1.fill_between(t, y_base+2*d, y_base + 10+2*d, alpha=0.5, where=predictions[i,:,2] > 0.6, facecolor='blue')
+        ax1.fill_between(t, y_base, y_base+10, alpha=0.5, where=predictions[i,:,0] > 0.5, facecolor='red')
+        ax1.fill_between(t, y_base+d, y_base + 10+d, alpha=0.5, where=predictions[i,:,1] > 0.5, facecolor='green')
+        ax1.fill_between(t, y_base+2*d, y_base + 10+2*d, alpha=0.5, where=predictions[i,:,2] > 0.5, facecolor='blue')
 
         ax2.set_ylim([0, 1.1])
         ax2.plot(predictions[i, :, 0],'k-',  alpha=0.6)
@@ -156,10 +153,10 @@ def test_model_multimask(model, batch, name):
     print("картинки сохранены!")
 
 if __name__ == "__main__":
-    name = "oxxy_annotator"
+    name = "oxxy_quad_annotator_long"
 
     train(name)
-    eval_models_in_folder(15)
+    eval_models_in_folder(45)
 
 
 

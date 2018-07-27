@@ -67,4 +67,4 @@ def unet_simple(seg_len):
     return model
 
 if __name__ == "__main__":
-    unet_simple(seg_len=1024)
+    unet_simple(seg_len=512)

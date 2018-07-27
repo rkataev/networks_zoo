@@ -23,9 +23,9 @@ def dice_coef_loss(y_true, y_pred):
 
 
 def dice_coef_multilabel_quad(y_true, y_pred):
-    loss_0 = dice_coef_loss(y_true[:, :, 0], y_pred[:, :, 0])
-    loss_1 = dice_coef_loss(y_true[:, :, 1], y_pred[:, :, 1])
-    loss_2 = dice_coef_loss(y_true[:, :, 2], y_pred[:, :, 2])
+    loss_0 = dice_coef_loss_quad(y_true[:, :, 0], y_pred[:, :, 0])
+    loss_1 = dice_coef_loss_quad(y_true[:, :, 1], y_pred[:, :, 1])
+    loss_2 = dice_coef_loss_quad(y_true[:, :, 2], y_pred[:, :, 2])
     loss = loss_0 + loss_1 + loss_2
     return loss
 
