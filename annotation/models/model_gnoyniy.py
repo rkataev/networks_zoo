@@ -12,7 +12,8 @@ from keras.losses import  categorical_crossentropy
 from annotation.dice_koef import (
     dice_coef, dice_coef_loss, dice_coef_multilabel_quad
 )
-
+#модель гнойшый - трехгралавя юнет с категориальной кросэнтропией и софтмаксом
+# на конце, работает, но закоментирована - т.к. не приносит резкого улучшения по сравнению с дайсом
 def unet_trihead_permute(seg_len):
     input_size = (seg_len, 1)
     inputs = Input(input_size)
