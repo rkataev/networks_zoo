@@ -35,9 +35,19 @@ def get_generators(train_batch, test_batch):
     """
     dataset_in = open_pickle(dataset_path)
     train_dset, test_dset = split_dict_annotations(dataset_in)
+
     my_generator_train = get_mulimask_generator(segment_len, batch_size=train_batch, dataset_in=train_dset)
     my_generator_test = get_mulimask_generator(segment_len, batch_size=test_batch, dataset_in=test_dset)
     return my_generator_train, my_generator_test
+
+def get_test_batch():
+    from annotation.ann_generator import delete_baseline_wander,extract_first_leads,shrink_dataset
+    dataset_in = open_pickle(dataset_path)
+    _, test_dset = split_dict_annotations(dataset_in)
+    dataset_only_one_channel = extract_first_leads(test_dset)
+    delete_baseline_wander(dataset_only_one_channel['x'])
+    dataset_shrinked = shrink_dataset(dataset_only_one_channel)
+    return dataset_shrinked
 
 def get_generators_permute(train_batch, test_batch):
     """чтобы возвращаелось none,4,512, а не none, 513, 3 как обычно
@@ -63,7 +73,7 @@ def train(name, need_permute=False):
         generator_train, generator_test = get_generators(train_batch=15, test_batch=50)
     history = model.fit_generator(generator=generator_train,
                                   steps_per_epoch=40,
-                                  epochs=45,
+                                  epochs=20,
                                   validation_data=generator_test,
                                   validation_steps=1)
 
@@ -153,7 +163,7 @@ def test_model_multimask(model, batch, name):
     print("картинки сохранены!")
 
 if __name__ == "__main__":
-    name = "oxxy_quad_annotator_long"
+    name = "oxxy_quad_annotator_long_nwond"
 
     train(name)
     eval_models_in_folder(45)

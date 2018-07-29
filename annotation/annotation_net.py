@@ -8,10 +8,11 @@ from annotation.ann_generator import (
     get_enhansed_generator
 )
 from annotation.dice_koef import (
-    dice_coef, dice_coef_loss
+    dice_coef, dice_coef_loss, dice_coef_loss_quad, get_custom_objects
 )
 from annotation.models.one_lead_one_mask import unet_simple
 from annotation.trained_model_testing import test_model
+from annotation.models.one_lead_model_maria import unet_simple_maria
 from utils import open_pickle
 from utils import save_history
 
@@ -41,13 +42,14 @@ def get_generators(train_batch, test_batch):
 def get_model():
     #return unet(seg_len=segment_len)
     return unet_simple(seg_len=segment_len)
+    #return unet_simple_maria(seg_len=segment_len)
 
 def train(name):
     model = get_model()
     generator_train, generator_test = get_generators(train_batch=15, test_batch=50)
     history = model.fit_generator(generator=generator_train,
                                   steps_per_epoch=40,
-                                  epochs=10,
+                                  epochs=14,
                                   validation_data=generator_test,
                                   validation_steps=1)
 
@@ -68,12 +70,12 @@ def eval_models_in_folder(num_pictures):
     for file in os.listdir(folder):
         filename = os.fsdecode(file)
         if filename.endswith(".h5"):
-            model = load_model(os.path.join(folder,filename),custom_objects={'dice_coef_loss': dice_coef_loss, 'dice_coef':dice_coef})
+            model = load_model(os.path.join(folder,filename),custom_objects=get_custom_objects())
             test_model(model, batch, name="VIS_"+filename[0:-len(".h5")])
 
 
 if __name__ == "__main__":
-    name = "venera_annotator"
+    name = "not_maria_quad_annotator_wond"
 
     train(name)
     eval_models_in_folder(40)

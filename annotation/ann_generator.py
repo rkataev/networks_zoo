@@ -114,6 +114,10 @@ def extract_first_lines(dataset_in):
     ann = dataset_in['ann'][:,2:3,:]
     return {'x':x, 'ann':ann}
 
+def delete_baseline_wander(x):
+    for i in range(0, x.shape[0]):
+        print("Now smoothing: " + str(i))
+        x[i, 0, :] = bwr.fix_baseline_wander(x[i, 0, :], 500)
 
 def get_enhansed_generator(segment_len, batch_size, dataset_in):
     """
@@ -125,11 +129,7 @@ def get_enhansed_generator(segment_len, batch_size, dataset_in):
     """
     dataset_only_one_channel = extract_first_lines(dataset_in)
     print("One channel shape: " + str(dataset_only_one_channel['x'].shape))
-
-    for i in range(0, dataset_only_one_channel['x'].shape[0]):
-        print("Now smoothing: " + str(i))
-        dataset_only_one_channel['x'][i, 0, :] = bwr.fix_baseline_wander(dataset_only_one_channel['x'][i, 0, :], 500)
-
+    #delete_baseline_wander(dataset_only_one_channel['x'])
     dataset_shrinked = shrink_dataset(dataset_only_one_channel)
     my_generator = annotated_generator(segment_len=segment_len, batch_size=batch_size, dataset_in=dataset_shrinked)
     return my_generator
@@ -152,6 +152,7 @@ def get_mulimask_generator(segment_len, batch_size, dataset_in):
     :return:
     """
     dataset_only_one_channel = extract_first_leads(dataset_in)
+    #delete_baseline_wander(dataset_only_one_channel['x'])
     dataset_shrinked = shrink_dataset(dataset_only_one_channel)
     my_generator = annotated_generator(segment_len=segment_len, batch_size=batch_size, dataset_in=dataset_shrinked)
     return my_generator
