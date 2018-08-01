@@ -1,9 +1,12 @@
 import numpy as np
 from dataset_getter import prepare_data
 import pprint
-from utils import open_pickle, get_addon_mask
+from utils import open_pickle, get_addon_mask, get_ecg_data
 import matplotlib.pyplot as plt
 import BaselineWanderRemoval as bwr
+import os
+import wfdb
+import random
 
 SHRINK_FACTOR = 2
 
@@ -104,6 +107,59 @@ def annotated_generator_with_addon(segment_len, batch_size, dataset_in):
         print(batch_ann.shape)
         yield (batch_x, batch_ann)
 
+def generator_qtdb(segment_len, batch_size):
+    
+    """
+    батч-генератор для ЭКГ из датасета QTDB
+    :param segment_len: длина (в тактах) кусков экг, которые будем вырезать
+    :param batch_size: длина батча, возвращаемого ф-цией
+    :param ecg_dataset: датасет для разрезания, представляет собой мапу с 2 ключами- 'х' и 'ann'
+    """
+
+    dataset_dir = '../datasets/qtdb/'
+    records_dirlist = [f for f in os.listdir(dataset_dir) if f.endswith('.dat')]
+    
+    curr_record_name = dataset_dir + os.path.splitext(random.choice(records_dirlist))[0]
+    result = get_ecg_data(curr_record_name)
+    while(result == -1):
+        curr_record_name = dataset_dir + os.path.splitext(random.choice(records_dirlist))[0]
+        result = get_ecg_data(curr_record_name)
+    
+    record = result[0]
+    annotation = result[1]
+    
+    starting_position = np.random.randint(0, np.size(record[0]) - segment_len)
+    ending_position = starting_position + segment_len
+    
+    while True:
+        batch_x = record[:, starting_position:ending_position, :]
+        batch_ann = np.array(annotation[:, starting_position:ending_position, :])
+        
+        addition = get_addon_mask(annotation[:, starting_position:ending_position, :])
+        batch_ann = np.concatenate((batch_ann, addition), 2)
+
+        for i in range(0, batch_size- 1):
+            
+            curr_record_name = dataset_dir + os.path.splitext(random.choice(records_dirlist))[0]
+            result = get_ecg_data(curr_record_name)
+            while(result == -1):
+                curr_record_name = dataset_dir + os.path.splitext(random.choice(records_dirlist))[0]
+                result = get_ecg_data(curr_record_name)
+            
+            record = result[0]
+            annotation = result[1] 
+
+            starting_position = np.random.randint(0, np.size(record[0]) - segment_len)
+            ending_position = starting_position + segment_len
+            
+            batch_x = np.concatenate(
+                (batch_x, record[:, starting_position:ending_position, :]), 0)
+            
+            mask = get_addon_mask(annotation[:, starting_position:ending_position, :])
+            addition = np.concatenate((annotation[:, starting_position:ending_position, :], mask), 2)
+            batch_ann = np.concatenate((batch_ann, addition), 0)
+        yield (batch_x, batch_ann)
+
 def extract_first_lines(dataset_in):
     """
     из каждой записи входного датасета берет первое отведение и первую маску
@@ -196,4 +252,3 @@ def draw_shrinked():
 if __name__ == "__main__":
     TEST_all()
     draw_shrinked()
-
