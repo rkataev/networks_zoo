@@ -95,27 +95,51 @@ def open_pickle(path):
     return load_pkl
 
 
-def get_ecg_data(record_path):
+def get_ecg_data(record_path, segment_len):
 
     annotator = 'q1c'
     annotation = wfdb.rdann(record_path, extension=annotator)
-    Lstannot = list(
-        zip(annotation.sample, annotation.symbol, annotation.aux_note))
+    Lstannot = list(zip(annotation.sample, annotation.symbol, annotation.aux_note))
 
     FirstLstannot = min(i[0] for i in Lstannot)
     LastLstannot = max(i[0] for i in Lstannot)-1
 
-    record = wfdb.rdsamp(record_path, sampfrom=FirstLstannot,
+    retry_flag = False
+
+    for i, j in enumerate(Lstannot[:-1]):
+        if((j[0] - Lstannot[i+1][0]) > 50):
+            return -1
+
+    if(retry_flag == True):
+        return -1
+    
+    if((LastLstannot-FirstLstannot) > 5000):
+        return -1
+
+    print("NOW WORKING: " + record_path)
+
+    print("DIST " + str(LastLstannot-FirstLstannot))
+
+    if((LastLstannot-FirstLstannot) < segment_len):
+        print("DIST " + str(LastLstannot-FirstLstannot))
+        print("NOT ENOUGH POINTS!")
+        return -1
+
+    record_lead1 = wfdb.rdsamp(record_path, sampfrom=FirstLstannot,
                          sampto=LastLstannot, channels=[0])
+    record_lead2 = wfdb.rdsamp(record_path, sampfrom=FirstLstannot,
+                         sampto=LastLstannot, channels=[1])
     annotation = wfdb.rdann(record_path, annotator,
                             sampfrom=FirstLstannot, sampto=LastLstannot)
 
     VctAnnotations = list(zip(annotation.sample, annotation.symbol))
 
-    mask_p = np.zeros(record[0].shape)
-    mask_qrs = np.zeros(record[0].shape)
-    mask_t = np.zeros(record[0].shape)
+    mask_p = np.zeros(record_lead1[0].shape)
+    mask_qrs = np.zeros(record_lead1[0].shape)
+    mask_t = np.zeros(record_lead1[0].shape)
 
+    #print(record_lead1[0].shape)
+    #print(record_lead2[0].shape)
     for i in range(len(VctAnnotations)):
         try:
             if VctAnnotations[i][1] == "p":
@@ -144,26 +168,27 @@ def get_ecg_data(record_path):
     sum_p = np.sum(mask_p)
     sum_qrs = np.sum(mask_qrs)
     sum_t = np.sum(mask_t)
-    print(sum_p)
-    print(sum_qrs)
-    print(sum_t)
 
-    lst = list(record)
-    lst[0] = normalize(record[0], axis=0, norm='max')
-    record = tuple(lst)
+    lst = list(record_lead1)
+    lst[0] = normalize(record_lead1[0], axis=0, norm='max')
+    record_lead1 = tuple(lst)
+    
+    lst = list(record_lead2)
+    lst[0] = normalize(record_lead2[0], axis=0, norm='max')
+    record_lead2 = tuple(lst)
 
     if (sum_p == 0):
-        print("P FAIL")
         return -1
     if (sum_qrs == 0):
-        print("QRS FAIL")
         return -1
     if (sum_t == 0):
-        print("T FAIL")
         return -1
 
-    print(record[0])
-    record_tens = np.reshape(record[0], (1, np.size(record[0]), 1))
+    lead2 = np.array(record_lead2[0])
+    lead2 = np.reshape(lead2, (1, np.size(record_lead2[0]), 1))
+
+    record_tens = np.reshape(record_lead1[0], (1, np.size(record_lead1[0]), 1))
+    record_tens = np.concatenate((record_tens, lead2), 2)
     mask_p = np.reshape(mask_p, (1, np.size(mask_p), 1))
     mask_qrs = np.reshape(mask_qrs, (1, np.size(mask_qrs), 1))
     mask_t = np.reshape(mask_t, (1, np.size(mask_t), 1))
@@ -173,8 +198,4 @@ def get_ecg_data(record_path):
     mask_tens = np.concatenate((mask_tens, mask_qrs), axis=2)
     mask_tens = np.concatenate((mask_tens, mask_t), axis=2)
 
-    #print("Parser output: ")
-    #print(record_tens.shape)
-    #print(mask_tens.shape)
-    
     return record_tens, mask_tens

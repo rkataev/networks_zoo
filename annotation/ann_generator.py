@@ -1,254 +1,201 @@
-import numpy as np
-from dataset_getter import prepare_data
-import pprint
-from utils import open_pickle, get_addon_mask, get_ecg_data
+# -*- coding: utf-8 -*
 import matplotlib.pyplot as plt
-import BaselineWanderRemoval as bwr
+import numpy as np
+import easygui
+import pickle as pkl
+from keras.models import load_model
 import os
 import wfdb
-import random
+from sklearn.preprocessing import normalize
+# plt.xkcd()
 
-SHRINK_FACTOR = 2
 
-def shrink_dataset(dataset_in):
+def draw_reconstruction_to_png(ecg_true, ecg_predicted, png_filename):
     """
-    выкидывает каждый пиксель с шагом SHRINK_FACTOR (из экг-шки и из маск)
-    :param dataset_in: датасет для разрезания, представляет собой мапу с 2 ключами- 'х' и 'ann'
+
+    :param ecg_true: истинная экг
+    :param ecg_predicted: предсказанное
+    :param png_filename: имя для файла с картинкой
     :return:
     """
-    dset_shrinked = {}
-    x = np.array(dataset_in['x'])
-    ann = np.array(dataset_in['ann'])
-    print ("dataset x has shape: " + str(x.shape))
-    dset_shrinked['x'] = x[:,:,::SHRINK_FACTOR]
-    print("dataset x has NOW shape: " + str(dset_shrinked['x'].shape))
-    dset_shrinked['ann'] = ann[:,:,::SHRINK_FACTOR]
-    return dset_shrinked
+    ecg_true = reshape_ecg_tensor(ecg_true)
+    ecg_predicted = reshape_ecg_tensor(ecg_predicted)
 
-def annotated_generator(segment_len, batch_size, dataset_in):
+    assert ecg_true.shape == ecg_predicted.shape
 
-    """
-    батч-генератор для ЭКГ с аннотациями
-    :param segment_len: длина (в тактах) кусков экг, которые будем вырезать
-    :param batch_size: длина батча, возвращаемого ф-цией
-    :param ecg_dataset: датасет для разрезания, представляет собой мапу с 2 ключами- 'х' и 'ann'
-    """
+    len_of_time = len(ecg_true[0])
+    t = [i for i in range(len_of_time)]
 
-    # open_pickle находится в utils для компактности
+    rows = len(ecg_true)  # кол-во каналов
+    cols = 2              # true и predicted - 2 столбика
+    f, axarr = plt.subplots(nrows=rows, ncols=cols, sharex=True, sharey=True)
+    for i in range(rows):
+        true_i_chanel = ecg_true[i]
+        predicted_i_chanel = ecg_predicted[i]
+        axarr[i, 0].plot(t, true_i_chanel)
+        axarr[i, 1].plot(t, predicted_i_chanel)
 
-    ecg_dataset = np.array(dataset_in['x'])
-    ecg_annotations = np.array(dataset_in['ann'])
+    plt.savefig(png_filename+".png")
 
-    # отступ от начала и конца
-    offset = 700
 
-    ecg_dataset = np.swapaxes(ecg_dataset, 1, 2)
-    ecg_annotations = np.swapaxes(ecg_annotations, 1, 2)
+def reshape_ecg_tensor(ecg):
+    # превратим (252, 1, 12) в (12, 252)
+    print("форма тезора с экг =  " + str(ecg.shape))
+    ecg = ecg[:, 0, :]
+    ecg = np.transpose(ecg)
+    print("форма тезора с экг (после напильника) =" + str(ecg))
+    return ecg
 
-    starting_position = np.random.randint(offset, ecg_dataset.shape[1] - segment_len - offset)
-    ending_position = starting_position + segment_len
-    ecg_rand = np.random.randint(0, ecg_dataset.shape[0])
 
-    while True:
-        batch_x = ecg_dataset[ecg_rand: ecg_rand +1, starting_position:ending_position, :]
-        batch_ann = np.array([ecg_annotations[ecg_rand, starting_position:ending_position, :]])
-        for i in range(0, batch_size- 1):
-            starting_position = np.random.randint(offset, ecg_dataset.shape[1] - segment_len - offset)
-            ending_position = starting_position + segment_len
-            ecg_rand = np.random.randint(0, ecg_dataset.shape[0])
-            batch_x = np.concatenate(
-                (batch_x, ecg_dataset[ecg_rand:ecg_rand + 1, starting_position:ending_position, :]), 0)
-            batch_ann = np.concatenate(
-                (batch_ann, ecg_annotations[ecg_rand:ecg_rand + 1, starting_position:ending_position, :]), 0)
-        print(batch_x.shape)
-        print(batch_ann.shape)
-        yield (batch_x, batch_ann)
+def save_history(history, canterpillar_name):
+    plt.plot(history.history['loss'])
+    plt.plot(history.history['val_loss'])
+    plt.title('model loss')
+    plt.ylabel('loss')
+    plt.xlabel('epoch')
+    plt.legend(['train', 'test'], loc='upper left')
+    plt.savefig(canterpillar_name+"_loss.png")
 
-def annotated_generator_with_addon(segment_len, batch_size, dataset_in):
-    """
-    батч-генератор для ЭКГ с аннотациями + дополнительная маска
-    :param segment_len: длина (в тактах) кусков экг, которые будем вырезать
-    :param batch_size: длина батча, возвращаемого ф-цией
-    :param ecg_dataset: датасет для разрезания, представляет собой мапу с 2 ключами- 'х' и 'ann'
-    """
+    if 'acc' in history.history.keys():
+        plt.plot(history.history['acc'])
+        plt.plot(history.history['val_acc'])
+        plt.title('model loss')
+        plt.ylabel('acc')
+        plt.xlabel('epoch')
+        plt.legend(['train', 'test'], loc='upper left')
+        plt.savefig(canterpillar_name + "_acc.png")
 
-    ecg_dataset = np.array(dataset_in['x'])
-    ecg_annotations = np.array(dataset_in['ann'])
 
-    # отступ от начала и конца
-    offset = 700
+def show_reconstruction_by_ae(ecg_sample, name):
+    filepath = easygui.fileopenbox("выберите файл с обученной моделью .h5")
+    trained_model = load_model(filepath)
+    trained_model.summary()
+    ecg_sample = np.array([ecg_sample])
+    prediction = trained_model.predict(ecg_sample)
 
-    ecg_dataset = np.swapaxes(ecg_dataset, 1, 2)
-    ecg_annotations = np.swapaxes(ecg_annotations, 1, 2)
+    draw_reconstruction_to_png(ecg_sample[0], prediction[0], name)
 
-    starting_position = np.random.randint(offset, ecg_dataset.shape[1] - segment_len - offset)
-    ending_position = starting_position + segment_len
-    ecg_rand = np.random.randint(0, ecg_dataset.shape[0])
-    while True:
-        batch_x = ecg_dataset[ecg_rand: ecg_rand +1, starting_position:ending_position, :]
-        batch_ann = np.array([ecg_annotations[ecg_rand, starting_position:ending_position, :]])
-        
-        addition = get_addon_mask(ecg_annotations[ecg_rand:ecg_rand + 1, starting_position:ending_position, :])
-        batch_ann = np.concatenate((batch_ann, addition), 2)
 
-        for i in range(0, batch_size- 1):
-            starting_position = np.random.randint(offset, ecg_dataset.shape[1] - segment_len - offset)
-            ending_position = starting_position + segment_len
-            ecg_rand = np.random.randint(0, ecg_dataset.shape[0])            
-            batch_x = np.concatenate(
-                (batch_x, ecg_dataset[ecg_rand:ecg_rand + 1, starting_position:ending_position, :]), 0)
-            
-            mask = get_addon_mask(ecg_annotations[ecg_rand:ecg_rand+1, starting_position:ending_position, :])
-            addition = np.concatenate((ecg_annotations[ecg_rand:ecg_rand + 1, starting_position:ending_position, :], mask), 2)
-            batch_ann = np.concatenate((batch_ann, addition), 0)
+def get_addon_mask(annotations_in):
+    addon = np.zeros((1, annotations_in.shape[1], 1))
 
-        batch_ann = np.swapaxes(batch_ann, 1, 2)
-        print(batch_x.shape)
-        print(batch_ann.shape)
-        yield (batch_x, batch_ann)
+    for i in range(0, annotations_in.shape[1]):
+        sum = annotations_in[:, i, 0] + annotations_in[:, i, 1] + annotations_in[:, i, 2]
+        if (sum == 0):
+            addon[0:1, i, 0:1] = 1
+        else:
+            continue
+    return addon
 
-def generator_qtdb(segment_len, batch_size):
+
+def open_pickle(path):
+    infile = open(path, 'rb')
+    load_pkl = pkl.load(infile)
+    infile.close()
+    return load_pkl
+
+
+def get_ecg_data(record_path, segment_len):
+
+    annotator = 'q1c'
+    annotation = wfdb.rdann(record_path, extension=annotator)
+    Lstannot = list(zip(annotation.sample, annotation.symbol, annotation.aux_note))
+
+    FirstLstannot = min(i[0] for i in Lstannot)
+    LastLstannot = max(i[0] for i in Lstannot)-1
+
+    retry_flag = False
+
+    for i, j in enumerate(Lstannot[:-1]):
+        if((j[0] - Lstannot[i+1][0]) > 10):
+            return -1
+
+    if(retry_flag == True):
+        return -1
     
-    """
-    батч-генератор для ЭКГ из датасета QTDB
-    :param segment_len: длина (в тактах) кусков экг, которые будем вырезать
-    :param batch_size: длина батча, возвращаемого ф-цией
-    :param ecg_dataset: датасет для разрезания, представляет собой мапу с 2 ключами- 'х' и 'ann'
-    """
+    if((LastLstannot-FirstLstannot) > 5000):
+        return -1
 
-    dataset_dir = '../datasets/qtdb/'
-    records_dirlist = [f for f in os.listdir(dataset_dir) if f.endswith('.dat')]
+    print("NOW WORKING: " + record_path)
+
+    print("DIST " + str(LastLstannot-FirstLstannot))
+
+    if((LastLstannot-FirstLstannot) < segment_len):
+        print("DIST " + str(LastLstannot-FirstLstannot))
+        print("NOT ENOUGH POINTS!")
+        return -1
+
+    record_lead1 = wfdb.rdsamp(record_path, sampfrom=FirstLstannot,
+                         sampto=LastLstannot, channels=[0])
+    record_lead2 = wfdb.rdsamp(record_path, sampfrom=FirstLstannot,
+                         sampto=LastLstannot, channels=[1])
+    annotation = wfdb.rdann(record_path, annotator,
+                            sampfrom=FirstLstannot, sampto=LastLstannot)
+
+    VctAnnotations = list(zip(annotation.sample, annotation.symbol))
+
+    mask_p = np.zeros(record_lead1[0].shape)
+    mask_qrs = np.zeros(record_lead1[0].shape)
+    mask_t = np.zeros(record_lead1[0].shape)
+
+    #print(record_lead1[0].shape)
+    #print(record_lead2[0].shape)
+    for i in range(len(VctAnnotations)):
+        try:
+            if VctAnnotations[i][1] == "p":
+                if VctAnnotations[i-1][1] == "(":
+                    pstart = VctAnnotations[i-1][0]
+                if VctAnnotations[i+1][1] == ")":
+                    pend = VctAnnotations[i+1][0]
+                if VctAnnotations[i+3][1] == "N":
+                    rpos = VctAnnotations[i+3][0]
+                    if VctAnnotations[i+2][1] == "(":
+                        qpos = VctAnnotations[i+2][0]
+                    if VctAnnotations[i+4][1] == ")":
+                        spos = VctAnnotations[i+4][0]
+                    # search for t (sometimes the "(" for the t  is missing  )
+                    for ii in range(0, 8):
+                        if VctAnnotations[i+ii][1] == "t":
+                            tpos = VctAnnotations[i+ii][0]
+                            if VctAnnotations[i+ii+1][1] == ")":
+                                tendpos = VctAnnotations[i+ii+1][0]
+                                mask_p[pstart-FirstLstannot:pend-FirstLstannot] = 1
+                                mask_qrs[qpos-FirstLstannot:spos-FirstLstannot] = 1
+                                mask_t[tpos-FirstLstannot:tendpos-FirstLstannot] = 1
+        except IndexError:
+            pass
+
+    sum_p = np.sum(mask_p)
+    sum_qrs = np.sum(mask_qrs)
+    sum_t = np.sum(mask_t)
+
+    lst = list(record_lead1)
+    lst[0] = normalize(record_lead1[0], axis=0, norm='max')
+    record_lead1 = tuple(lst)
     
-    curr_record_name = dataset_dir + os.path.splitext(random.choice(records_dirlist))[0]
-    result = get_ecg_data(curr_record_name)
-    while(result == -1):
-        curr_record_name = dataset_dir + os.path.splitext(random.choice(records_dirlist))[0]
-        result = get_ecg_data(curr_record_name)
-    
-    record = result[0]
-    annotation = result[1]
-    
-    starting_position = np.random.randint(0, np.size(record[0]) - segment_len)
-    ending_position = starting_position + segment_len
-    
-    while True:
-        batch_x = record[:, starting_position:ending_position, :]
-        batch_ann = np.array(annotation[:, starting_position:ending_position, :])
-        
-        addition = get_addon_mask(annotation[:, starting_position:ending_position, :])
-        batch_ann = np.concatenate((batch_ann, addition), 2)
+    lst = list(record_lead2)
+    lst[0] = normalize(record_lead2[0], axis=0, norm='max')
+    record_lead2 = tuple(lst)
 
-        for i in range(0, batch_size- 1):
-            
-            curr_record_name = dataset_dir + os.path.splitext(random.choice(records_dirlist))[0]
-            result = get_ecg_data(curr_record_name)
-            while(result == -1):
-                curr_record_name = dataset_dir + os.path.splitext(random.choice(records_dirlist))[0]
-                result = get_ecg_data(curr_record_name)
-            
-            record = result[0]
-            annotation = result[1] 
+    if (sum_p == 0):
+        return -1
+    if (sum_qrs == 0):
+        return -1
+    if (sum_t == 0):
+        return -1
 
-            starting_position = np.random.randint(0, np.size(record[0]) - segment_len)
-            ending_position = starting_position + segment_len
-            
-            batch_x = np.concatenate(
-                (batch_x, record[:, starting_position:ending_position, :]), 0)
-            
-            mask = get_addon_mask(annotation[:, starting_position:ending_position, :])
-            addition = np.concatenate((annotation[:, starting_position:ending_position, :], mask), 2)
-            batch_ann = np.concatenate((batch_ann, addition), 0)
-        yield (batch_x, batch_ann)
+    lead2 = np.array(record_lead2[0])
+    lead2 = np.reshape(lead2, (1, np.size(record_lead2[0]), 1))
 
-def extract_first_lines(dataset_in):
-    """
-    из каждой записи входного датасета берет первое отведение и первую маску
-    :param dataset_in: датасет, представляет собой мапу с 2 ключами- 'х' и 'ann'
-    :return: датасет, представляет собой мапу с 2 ключами- 'х' и 'ann'
-    """
-    x = dataset_in['x'][:,0:1,:]
-    ann = dataset_in['ann'][:,2:3,:]
-    return {'x':x, 'ann':ann}
+    record_tens = np.reshape(record_lead1[0], (1, np.size(record_lead1[0]), 1))
+    record_tens = np.concatenate((record_tens, lead2), 2)
+    mask_p = np.reshape(mask_p, (1, np.size(mask_p), 1))
+    mask_qrs = np.reshape(mask_qrs, (1, np.size(mask_qrs), 1))
+    mask_t = np.reshape(mask_t, (1, np.size(mask_t), 1))
 
-def delete_baseline_wander(x):
-    for i in range(0, x.shape[0]):
-        print("Now smoothing: " + str(i))
-        x[i, 0, :] = bwr.fix_baseline_wander(x[i, 0, :], 500)
+    mask_tens = np.empty((1, np.size(mask_p), 0))
+    mask_tens = np.concatenate((mask_tens, mask_p), axis=2)
+    mask_tens = np.concatenate((mask_tens, mask_qrs), axis=2)
+    mask_tens = np.concatenate((mask_tens, mask_t), axis=2)
 
-def get_enhansed_generator(segment_len, batch_size, dataset_in):
-    """
-    генератор данных для аннотатора, внутри него произведена вся необходимая предобраотка экг/аннотиаций
-    :param segment_len:
-    :param batch_size:
-    :param dataset_in: датасет, представляет собой мапу с 2 ключами- 'х' и 'ann'
-    :return:
-    """
-    dataset_only_one_channel = extract_first_lines(dataset_in)
-    print("One channel shape: " + str(dataset_only_one_channel['x'].shape))
-    #delete_baseline_wander(dataset_only_one_channel['x'])
-    dataset_shrinked = shrink_dataset(dataset_only_one_channel)
-    my_generator = annotated_generator(segment_len=segment_len, batch_size=batch_size, dataset_in=dataset_shrinked)
-    return my_generator
-
-def extract_first_leads(dataset_in):
-    """
-    из каждой записи входного датасета берет первое отведение
-    :param dataset_in: датасет, представляет собой мапу с 2 ключами- 'х' и 'ann'
-    :return: датасет, представляет собой мапу с 2 ключами- 'х' и 'ann'
-    """
-    x = dataset_in['x'][:,0:1,:]
-    return {'x':x, 'ann':dataset_in['ann']}
-
-def get_mulimask_generator(segment_len, batch_size, dataset_in):
-    """
-    генератор данных для аннотатора, внутри него произведена вся необходимая предобраотка экг/аннотиаций
-    :param segment_len:
-    :param batch_size:
-    :param dataset_in: датасет, представляет собой мапу с 2 ключами- 'х' и 'ann'
-    :return:
-    """
-    dataset_only_one_channel = extract_first_leads(dataset_in)
-    #delete_baseline_wander(dataset_only_one_channel['x'])
-    dataset_shrinked = shrink_dataset(dataset_only_one_channel)
-    my_generator = annotated_generator(segment_len=segment_len, batch_size=batch_size, dataset_in=dataset_shrinked)
-    return my_generator
-
-def get_mulimask_generator_addon(segment_len, batch_size, dataset_in):
-    """
-    генератор данных для аннотатора, внутри него произведена вся необходимая предобраотка экг/аннотиаций + доп. маска
-    :param segment_len:
-    :param batch_size:
-    :param dataset_in: датасет, представляет собой мапу с 2 ключами- 'х' и 'ann'
-    :return:
-    """
-    dataset_only_one_channel = extract_first_leads(dataset_in)
-    dataset_shrinked = shrink_dataset(dataset_only_one_channel)
-    my_generator = annotated_generator_with_addon(segment_len=segment_len, batch_size=batch_size, dataset_in=dataset_shrinked)
-    return my_generator
-
-def TEST_all():
-    dataset_in = open_pickle('../datasets/DSET_argentina.pkl')
-    my_generator = get_enhansed_generator(segment_len=512, batch_size=20, dataset_in=dataset_in)
-    batch = next(my_generator)
-    print ("shape of batch x= " + str(batch[0].shape))
-    print("shape of batch y= " + str(batch[1].shape))
-
-def draw_shrinked():
-    dataset_in = open_pickle('../datasets/DSET_argentina.pkl')
-    dataset_only_one_channel = extract_first_lines(dataset_in)
-    dset_shrinked = shrink_dataset(dataset_only_one_channel)
-    before_x = dataset_only_one_channel['x'][0,0,0:30]
-    after_x = dset_shrinked['x'][0,0,0:30]
-
-    figname = "shrinked_ecg.png"
-    f, (ax1, ax2) = plt.subplots(1, 2, sharey=True, sharex=False)
-    ax1.plot(before_x, 'k-', label="несжатый")
-    ax2.plot(after_x, 'm-', label="сжатый в "+ str(SHRINK_FACTOR))
-
-    plt.legend(loc=2)
-    plt.savefig(figname)
-
-
-if __name__ == "__main__":
-    TEST_all()
-    draw_shrinked()
+    return record_tens, mask_tens
